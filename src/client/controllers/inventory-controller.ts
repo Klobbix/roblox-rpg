@@ -7,7 +7,7 @@ import {
 	DEFAULT_TAB_SLOTS,
 	INVENTORY_TABS,
 } from "shared/types/player";
-import { ItemConfigs, RARITY_COLORS, ItemType } from "shared/data/items";
+import { ItemConfigs, RARITY_COLORS } from "shared/data/items";
 import { fireServer, onClientEvent } from "client/network/client-network";
 
 const localPlayer = Players.LocalPlayer;
@@ -564,7 +564,7 @@ function onSlotLeftClick(slotIndex: number): void {
 		const item = tabInventories[activeTab].slots[slotIndex];
 		if (item !== undefined) {
 			const config = ItemConfigs[item.itemId];
-			if (config?.itemType === ItemType.Equipment && config.equipment) {
+			if (config?.equipment) {
 				fireServer("EquipItem", { slotIndex });
 				selectedSlot = undefined;
 				return;

@@ -1,5 +1,5 @@
 import { EquipmentSlot, InventoryItem, InventoryTab } from "shared/types/player";
-import { ItemConfigs, ItemType } from "shared/data/items";
+import { ItemConfigs } from "shared/data/items";
 import { fireClient } from "server/network/server-network";
 import * as PlayerDataService from "./player-data-service";
 import * as InventoryService from "./inventory-service";
@@ -28,7 +28,7 @@ export function equipItem(player: Player, slotIndex: number): boolean {
 	if (slot === undefined) return false;
 
 	const config = ItemConfigs[slot.itemId];
-	if (!config || config.itemType !== ItemType.Equipment || !config.equipment) {
+	if (!config || !config.equipment) {
 		fireClient(player, "EquipFailed", { reason: "Not an equippable item." });
 		return false;
 	}

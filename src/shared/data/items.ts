@@ -342,6 +342,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 10,
 		tool: { skillId: "mining", tier: 1, speedMultiplier: 1.0, levelRequirement: 1 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 	iron_pickaxe: {
 		id: "iron_pickaxe",
@@ -353,6 +359,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 50,
 		tool: { skillId: "mining", tier: 2, speedMultiplier: 0.75, levelRequirement: 10 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 	steel_pickaxe: {
 		id: "steel_pickaxe",
@@ -364,6 +376,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 200,
 		tool: { skillId: "mining", tier: 3, speedMultiplier: 0.5, levelRequirement: 30 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 
 	// --- Hatchets (Woodcutting) ---
@@ -377,6 +395,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 10,
 		tool: { skillId: "woodcutting", tier: 1, speedMultiplier: 1.0, levelRequirement: 1 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 	iron_hatchet: {
 		id: "iron_hatchet",
@@ -388,6 +412,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 50,
 		tool: { skillId: "woodcutting", tier: 2, speedMultiplier: 0.75, levelRequirement: 10 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 	steel_hatchet: {
 		id: "steel_hatchet",
@@ -399,6 +429,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 200,
 		tool: { skillId: "woodcutting", tier: 3, speedMultiplier: 0.5, levelRequirement: 30 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 
 	// --- Fishing Rods ---
@@ -412,6 +448,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 10,
 		tool: { skillId: "fishing", tier: 1, speedMultiplier: 1.0, levelRequirement: 1 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 	steel_fishing_rod: {
 		id: "steel_fishing_rod",
@@ -423,6 +465,12 @@ export const ItemConfigs: Record<string, ItemConfig> = {
 		maxStack: 1,
 		sellPrice: 200,
 		tool: { skillId: "fishing", tier: 3, speedMultiplier: 0.5, levelRequirement: 20 },
+		equipment: {
+			equipSlot: EquipmentSlot.Weapon,
+			statBonuses: { attack: 2, strength: 1 },
+			levelRequirement: 1,
+			attackSpeed: 2.0,
+		},
 	},
 
 	// ===== GATHERING MATERIALS =====
