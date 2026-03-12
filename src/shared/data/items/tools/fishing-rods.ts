@@ -18,6 +18,11 @@ export const FishingRodConfigs: Record<string, ItemConfig> = {
 			levelRequirement: 1,
 			attackSpeed: 2.0,
 		},
+		viewmodel: {
+			holdOffset: new CFrame(0.40, -0.50, -0.90),
+			swingStyle: "cast",
+			swingDuration: 0.90,
+		},
 	},
 	steel_fishing_rod: {
 		id: "steel_fishing_rod",
@@ -34,6 +39,11 @@ export const FishingRodConfigs: Record<string, ItemConfig> = {
 			statBonuses: { attack: 2, strength: 1 },
 			levelRequirement: 1,
 			attackSpeed: 2.0,
+		},
+		viewmodel: {
+			holdOffset: new CFrame(0.40, -0.50, -0.90),
+			swingStyle: "cast",
+			swingDuration: 0.85,
 		},
 	},
 };

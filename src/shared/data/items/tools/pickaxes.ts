@@ -1,8 +1,9 @@
 import { EquipmentSlot } from "shared/types/player";
 import { ItemConfig, ItemType, ItemRarity } from "../types";
 
+const HOLD = new CFrame(0.42, -0.55, -1.05).mul(CFrame.Angles(0, 0, math.rad(-5)));
+
 export const PickaxeConfigs: Record<string, ItemConfig> = {
-	// --- Pickaxes (Mining) ---
 	bronze_pickaxe: {
 		id: "bronze_pickaxe",
 		name: "Bronze Pickaxe",
@@ -18,6 +19,12 @@ export const PickaxeConfigs: Record<string, ItemConfig> = {
 			statBonuses: { attack: 2, strength: 1 },
 			levelRequirement: 1,
 			attackSpeed: 2.0,
+		},
+		viewmodel: {
+			holdOffset: new CFrame(1.0, -0.5, -1.2),
+			swingStyle: "chop",
+			swingDuration: 0.5,
+			modelName: "BronzePickaxe",
 		},
 	},
 	iron_pickaxe: {
@@ -36,6 +43,11 @@ export const PickaxeConfigs: Record<string, ItemConfig> = {
 			levelRequirement: 1,
 			attackSpeed: 2.0,
 		},
+		viewmodel: {
+			holdOffset: HOLD,
+			swingStyle: "chop",
+			swingDuration: 0.48,
+		},
 	},
 	steel_pickaxe: {
 		id: "steel_pickaxe",
@@ -53,5 +65,10 @@ export const PickaxeConfigs: Record<string, ItemConfig> = {
 			levelRequirement: 1,
 			attackSpeed: 2.0,
 		},
-	}
+		viewmodel: {
+			holdOffset: HOLD,
+			swingStyle: "chop",
+			swingDuration: 0.45,
+		},
+	},
 };

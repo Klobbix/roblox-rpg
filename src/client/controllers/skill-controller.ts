@@ -3,6 +3,7 @@ import { SkillConfigs, SKILL_IDS, totalSkillExpForLevel, skillExpBetweenLevels }
 import { GatheringNodeConfigs } from "shared/data/gathering-nodes";
 import { SkillProgress } from "shared/types/player";
 import { fireServer, onClientEvent } from "client/network/client-network";
+import * as ViewmodelController from "./viewmodel-controller";
 
 const localPlayer = Players.LocalPlayer;
 const playerGui = localPlayer.WaitForChild("PlayerGui") as PlayerGui;
@@ -359,6 +360,7 @@ export function initialize(): void {
 		gatherStartTime = tick();
 		gatherDuration = data.gatherTime;
 		gatherBarContainer.Visible = true;
+		ViewmodelController.playSwing();
 	});
 
 	onClientEvent("GatherComplete", (data) => {

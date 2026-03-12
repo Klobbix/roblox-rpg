@@ -45,6 +45,21 @@ export interface EquipmentData {
 	attackSpeed?: number;
 }
 
+// --- Viewmodel ---
+
+export type SwingStyle = "slash" | "stab" | "chop" | "cast";
+
+/** First-person viewmodel config embedded in an item definition. */
+export interface ViewmodelConfig {
+	/** Position+rotation of the weapon root relative to the camera */
+	holdOffset: CFrame;
+	swingStyle: SwingStyle;
+	/** Full swing cycle duration in seconds */
+	swingDuration: number;
+	/** Name of a Model inside ReplicatedStorage.Viewmodels to clone and display in-hand */
+	modelName?: string;
+}
+
 /** Tool-specific fields */
 export interface ToolData {
 	skillId: string;
@@ -71,4 +86,6 @@ export interface ItemConfig {
 	equipment?: EquipmentData;
 	/** Tool data — only present for Tool items */
 	tool?: ToolData;
+	/** First-person viewmodel — present on any item that shows a model in hand */
+	viewmodel?: ViewmodelConfig;
 }

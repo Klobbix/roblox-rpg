@@ -1,6 +1,8 @@
 import { EquipmentSlot } from "shared/types/player";
 import { ItemConfig, ItemType, ItemRarity } from "../types";
 
+const HOLD = new CFrame(0.42, -0.52, -1.0).mul(CFrame.Angles(0, 0, math.rad(-5)));
+
 export const HatchetConfigs: Record<string, ItemConfig> = {
 	bronze_hatchet: {
 		id: "bronze_hatchet",
@@ -17,6 +19,11 @@ export const HatchetConfigs: Record<string, ItemConfig> = {
 			statBonuses: { attack: 2, strength: 1 },
 			levelRequirement: 1,
 			attackSpeed: 2.0,
+		},
+		viewmodel: {
+			holdOffset: HOLD,
+			swingStyle: "chop",
+			swingDuration: 0.45,
 		},
 	},
 	iron_hatchet: {
@@ -35,6 +42,11 @@ export const HatchetConfigs: Record<string, ItemConfig> = {
 			levelRequirement: 1,
 			attackSpeed: 2.0,
 		},
+		viewmodel: {
+			holdOffset: HOLD,
+			swingStyle: "chop",
+			swingDuration: 0.42,
+		},
 	},
 	steel_hatchet: {
 		id: "steel_hatchet",
@@ -52,5 +64,10 @@ export const HatchetConfigs: Record<string, ItemConfig> = {
 			levelRequirement: 1,
 			attackSpeed: 2.0,
 		},
-	}
+		viewmodel: {
+			holdOffset: HOLD,
+			swingStyle: "chop",
+			swingDuration: 0.40,
+		},
+	},
 };

@@ -1,5 +1,6 @@
 import { Players, UserInputService, Workspace } from "@rbxts/services";
 import { fireServer, onClientEvent } from "client/network/client-network";
+import * as ViewmodelController from "./viewmodel-controller";
 
 const localPlayer = Players.LocalPlayer;
 const mouse = localPlayer.GetMouse();
@@ -154,6 +155,7 @@ export function initialize(): void {
 	});
 
 	onClientEvent("DamageDealt", (data) => {
+		ViewmodelController.playSwing();
 		const mobModel = findMobById(data.mobId);
 		if (mobModel && mobModel.PrimaryPart) {
 			showDamageNumber(mobModel.PrimaryPart.Position, data.damage, data.damage === 0);

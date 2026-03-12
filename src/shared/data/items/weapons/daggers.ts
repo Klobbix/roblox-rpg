@@ -17,5 +17,10 @@ export const DaggerConfigs: Record<string, ItemConfig> = {
 			levelRequirement: 1,
 			attackSpeed: 2.0,
 		},
+		viewmodel: {
+			holdOffset: new CFrame(0.45, -0.52, -0.95).mul(CFrame.Angles(0, 0, math.rad(-8))),
+			swingStyle: "stab",
+			swingDuration: 0.22,
+		},
 	},
 };

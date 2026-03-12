@@ -17,6 +17,11 @@ export const SwordConfigs: Record<string, ItemConfig> = {
 			levelRequirement: 1,
 			attackSpeed: 2.0,
 		},
+		viewmodel: {
+			holdOffset: new CFrame(0.50, -0.60, -1.10).mul(CFrame.Angles(0, 0, math.rad(-10))),
+			swingStyle: "slash",
+			swingDuration: 0.32,
+		},
 	},
 	iron_sword: {
 		id: "iron_sword",
@@ -32,6 +37,11 @@ export const SwordConfigs: Record<string, ItemConfig> = {
 			statBonuses: { attack: 5, strength: 4 },
 			levelRequirement: 5,
 			attackSpeed: 2.4,
+		},
+		viewmodel: {
+			holdOffset: new CFrame(0.50, -0.62, -1.15).mul(CFrame.Angles(0, 0, math.rad(-12))),
+			swingStyle: "slash",
+			swingDuration: 0.35,
 		},
 	},
 };

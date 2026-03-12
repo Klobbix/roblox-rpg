@@ -1,6 +1,7 @@
 export * as RenderController from "./render-controller";
 export * as CombatController from "./combat-controller";
 export * as CursorController from "./cursor-controller";
+export * as ViewmodelController from "./viewmodel-controller";
 export * as InventoryController from "./inventory-controller";
 export * as SkillController from "./skill-controller";
 export * as NPCController from "./npc-controller";
