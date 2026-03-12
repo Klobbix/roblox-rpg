@@ -70,7 +70,7 @@ MobService.initialize();
 // 9. Spawner service (finds/creates spawners, spawns initial mobs)
 SpawnerService.initialize();
 
-// 10. Combat service (registers combat game loop system, wires mob attack callback)
+// 10. Combat service (wires mob attack callback)
 CombatService.initialize();
 
 // 11. Game loop — starts Heartbeat tick (all systems must be registered before this)
@@ -78,12 +78,12 @@ GameLoopService.initialize();
 
 // --- Remote Event Handlers ---
 
-onServerEvent("EngageCombat", (player, data) => {
-	CombatService.engageCombat(player, data.mobId);
-});
-
-onServerEvent("DisengageCombat", (player) => {
-	CombatService.disengageCombat(player);
+onServerEvent("Swing", (player, data) => {
+	if (data.targetType === "mob") {
+		CombatService.swingAtMob(player, data.targetId);
+	} else if (data.targetType === "node") {
+		GatheringService.hitNode(player, data.targetId);
+	}
 });
 
 onServerEvent("PickupItem", (player, data) => {
@@ -118,14 +118,6 @@ onServerEvent("EquipItem", (player, data) => {
 
 onServerEvent("UnequipItem", (player, data) => {
 	EquipmentService.unequipItem(player, data.equipSlot);
-});
-
-onServerEvent("StartGather", (player, data) => {
-	GatheringService.startGather(player, data.nodeId);
-});
-
-onServerEvent("CancelGather", (player) => {
-	GatheringService.cancelGather(player);
 });
 
 // NPC / Dialogue

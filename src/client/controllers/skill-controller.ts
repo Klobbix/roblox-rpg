@@ -1,9 +1,7 @@
-import { Players, UserInputService, CollectionService, Workspace, RunService } from "@rbxts/services";
+import { Players, UserInputService, RunService } from "@rbxts/services";
 import { SkillConfigs, SKILL_IDS, totalSkillExpForLevel, skillExpBetweenLevels } from "shared/data/skills";
-import { GatheringNodeConfigs } from "shared/data/gathering-nodes";
 import { SkillProgress } from "shared/types/player";
-import { fireServer, onClientEvent } from "client/network/client-network";
-import * as ViewmodelController from "./viewmodel-controller";
+import { onClientEvent } from "client/network/client-network";
 
 const localPlayer = Players.LocalPlayer;
 const playerGui = localPlayer.WaitForChild("PlayerGui") as PlayerGui;
@@ -13,26 +11,17 @@ const playerGui = localPlayer.WaitForChild("PlayerGui") as PlayerGui;
 const BG_COLOR = Color3.fromRGB(30, 30, 30);
 const BAR_BG_COLOR = Color3.fromRGB(50, 50, 50);
 const BAR_FILL_COLOR = Color3.fromRGB(60, 180, 80);
-const GATHER_BAR_COLOR = Color3.fromRGB(80, 160, 220);
 
 // --- State ---
 
 const skillData: Map<string, SkillProgress> = new Map();
 let skillPanelOpen = false;
-let gatheringNodeId: string | undefined;
-let gatherStartTime = 0;
-let gatherDuration = 0;
 
 // --- UI References ---
 
 let screenGui: ScreenGui;
 let skillFrame: Frame;
 const skillRows: Map<string, { levelLabel: TextLabel; expBar: Frame; expLabel: TextLabel }> = new Map();
-
-// Gather progress bar
-let gatherBarContainer: Frame;
-let gatherBarFill: Frame;
-let gatherBarLabel: TextLabel;
 
 // --- Skill Panel UI ---
 
@@ -143,41 +132,6 @@ function createUI(): void {
 		skillRows.set(skillId, { levelLabel, expBar: barFill, expLabel });
 	}
 
-	// --- Gather Progress Bar (centered bottom of screen) ---
-
-	gatherBarContainer = new Instance("Frame");
-	gatherBarContainer.Name = "GatherBar";
-	gatherBarContainer.Size = new UDim2(0, 200, 0, 22);
-	gatherBarContainer.Position = new UDim2(0.5, -100, 0.85, 0);
-	gatherBarContainer.BackgroundColor3 = BAR_BG_COLOR;
-	gatherBarContainer.BorderSizePixel = 0;
-	gatherBarContainer.Visible = false;
-	gatherBarContainer.Parent = screenGui;
-
-	const gatherCorner = new Instance("UICorner");
-	gatherCorner.CornerRadius = new UDim(0, 4);
-	gatherCorner.Parent = gatherBarContainer;
-
-	gatherBarFill = new Instance("Frame");
-	gatherBarFill.Name = "Fill";
-	gatherBarFill.Size = UDim2.fromScale(0, 1);
-	gatherBarFill.BackgroundColor3 = GATHER_BAR_COLOR;
-	gatherBarFill.BorderSizePixel = 0;
-	gatherBarFill.Parent = gatherBarContainer;
-
-	const gatherFillCorner = new Instance("UICorner");
-	gatherFillCorner.CornerRadius = new UDim(0, 4);
-	gatherFillCorner.Parent = gatherBarFill;
-
-	gatherBarLabel = new Instance("TextLabel");
-	gatherBarLabel.Name = "Label";
-	gatherBarLabel.Size = UDim2.fromScale(1, 1);
-	gatherBarLabel.BackgroundTransparency = 1;
-	gatherBarLabel.Text = "Gathering...";
-	gatherBarLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
-	gatherBarLabel.TextSize = 12;
-	gatherBarLabel.Font = Enum.Font.GothamBold;
-	gatherBarLabel.Parent = gatherBarContainer;
 }
 
 // --- UI Updates ---
@@ -264,41 +218,6 @@ function showFloatingExp(skillId: string, amount: number): void {
 	});
 }
 
-// --- Gathering Node Interaction ---
-
-function findGatheringNode(part: BasePart): Model | undefined {
-	let current: Instance | undefined = part;
-	while (current) {
-		if (current.IsA("Model") && current.GetAttribute("NodeId") !== undefined) {
-			return current;
-		}
-		// Also check BasePart directly (test nodes are single Parts)
-		if (current.IsA("BasePart") && current.GetAttribute("NodeId") !== undefined) {
-			return current as unknown as Model;
-		}
-		current = current.Parent as Instance | undefined;
-	}
-	return undefined;
-}
-
-// --- Gather Progress Update ---
-
-function updateGatherBar(): void {
-	if (gatheringNodeId === undefined) {
-		gatherBarContainer.Visible = false;
-		return;
-	}
-
-	const elapsed = tick() - gatherStartTime;
-	const fraction = math.clamp(elapsed / gatherDuration, 0, 1);
-	gatherBarFill.Size = new UDim2(fraction, 0, 1, 0);
-
-	const nodeConfig = GatheringNodeConfigs[gatheringNodeId];
-	const nodeName = nodeConfig ? nodeConfig.name : "Node";
-	gatherBarLabel.Text = `Gathering ${nodeName}...`;
-	gatherBarContainer.Visible = true;
-}
-
 // --- Initialize ---
 
 export function initialize(): void {
@@ -312,65 +231,9 @@ export function initialize(): void {
 		}
 	});
 
-	// Click on gathering nodes
-	const mouse = localPlayer.GetMouse();
-	mouse.Button1Down.Connect(() => {
-		const target = mouse.Target;
-		if (!target) return;
-
-		const nodeInstance = findGatheringNode(target);
-		if (nodeInstance) {
-			const nodeId = nodeInstance.GetAttribute("NodeId") as string;
-			if (nodeId) {
-				fireServer("StartGather", { nodeId });
-			}
-		}
-	});
-
-	// Cancel gathering on movement input
-	UserInputService.InputBegan.Connect((input, gameProcessed) => {
-		if (gameProcessed) return;
-		if (gatheringNodeId === undefined) return;
-
-		const moveKeys = [
-			Enum.KeyCode.W,
-			Enum.KeyCode.A,
-			Enum.KeyCode.S,
-			Enum.KeyCode.D,
-		];
-		for (const key of moveKeys) {
-			if (input.KeyCode === key) {
-				fireServer("CancelGather", undefined);
-				gatheringNodeId = undefined;
-				gatherBarContainer.Visible = false;
-				return;
-			}
-		}
-	});
-
-	// Gather progress bar update
-	RunService.RenderStepped.Connect(() => {
-		updateGatherBar();
-	});
-
 	// --- Event Listeners ---
 
-	onClientEvent("GatherStarted", (data) => {
-		gatheringNodeId = data.nodeId;
-		gatherStartTime = tick();
-		gatherDuration = data.gatherTime;
-		gatherBarContainer.Visible = true;
-		ViewmodelController.playSwing();
-	});
-
-	onClientEvent("GatherComplete", (data) => {
-		gatheringNodeId = undefined;
-		gatherBarContainer.Visible = false;
-	});
-
 	onClientEvent("GatherFailed", (data) => {
-		gatheringNodeId = undefined;
-		gatherBarContainer.Visible = false;
 		warn(`[Gathering] ${data.reason}`);
 	});
 

@@ -5,8 +5,6 @@ import * as ViewmodelController from "./viewmodel-controller";
 const localPlayer = Players.LocalPlayer;
 const mouse = localPlayer.GetMouse();
 
-let inCombat = false;
-
 /** Walk up parent tree to find a Model with a MobId attribute. */
 function findMobModel(part: BasePart): Model | undefined {
 	let current: Instance | undefined = part;
@@ -15,6 +13,28 @@ function findMobModel(part: BasePart): Model | undefined {
 			return current;
 		}
 		current = current.Parent as Instance | undefined;
+	}
+	return undefined;
+}
+
+/** Walk up parent tree to find an instance with a NodeId attribute. */
+function findNodeInstance(part: BasePart): Instance | undefined {
+	let current: Instance | undefined = part;
+	while (current) {
+		if (current.GetAttribute("NodeId") !== undefined) {
+			return current;
+		}
+		current = current.Parent as Instance | undefined;
+	}
+	return undefined;
+}
+
+/** Find a mob Model in Workspace by its MobId attribute. */
+function findMobById(mobId: string): Model | undefined {
+	for (const child of Workspace.GetChildren()) {
+		if (child.IsA("Model") && child.GetAttribute("MobId") === mobId) {
+			return child;
+		}
 	}
 	return undefined;
 }
@@ -50,7 +70,6 @@ function showDamageNumber(position: Vector3, damage: number, isMiss: boolean): v
 	label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
 	label.Parent = billboard;
 
-	// Float up and fade
 	task.spawn(() => {
 		for (let i = 0; i < 20; i++) {
 			task.wait(0.05);
@@ -107,18 +126,8 @@ function showDamageTaken(damage: number): void {
 	});
 }
 
-/** Find a mob Model in Workspace by its MobId attribute. */
-function findMobById(mobId: string): Model | undefined {
-	for (const child of Workspace.GetChildren()) {
-		if (child.IsA("Model") && child.GetAttribute("MobId") === mobId) {
-			return child;
-		}
-	}
-	return undefined;
-}
-
 export function initialize(): void {
-	// Click to engage combat / swing viewmodel
+	// Every left click = swing. Send Swing event if a valid target is under the cursor.
 	UserInputService.InputBegan.Connect((input, gameProcessed) => {
 		if (gameProcessed) return;
 		if (input.UserInputType !== Enum.UserInputType.MouseButton1) return;
@@ -132,32 +141,23 @@ export function initialize(): void {
 		if (mobModel) {
 			const mobId = mobModel.GetAttribute("MobId") as string;
 			if (mobId) {
-				fireServer("EngageCombat", { mobId });
+				fireServer("Swing", { targetId: mobId, targetType: "mob" });
 			}
+			return;
 		}
-	});
 
-	// Escape to disengage
-	UserInputService.InputBegan.Connect((input, gameProcessed) => {
-		if (input.KeyCode === Enum.KeyCode.Escape && inCombat) {
-			fireServer("DisengageCombat", undefined);
+		const nodeInstance = findNodeInstance(target);
+		if (nodeInstance) {
+			const nodeId = nodeInstance.GetAttribute("NodeId") as string;
+			if (nodeId) {
+				fireServer("Swing", { targetId: nodeId, targetType: "node" });
+			}
 		}
 	});
 
 	// --- Event Listeners ---
 
-	onClientEvent("CombatStarted", (data) => {
-		inCombat = true;
-		print(`[Combat] Engaging mob ${data.mobId}`);
-	});
-
-	onClientEvent("CombatEnded", (data) => {
-		inCombat = false;
-		print(`[Combat] Disengaged: ${data.reason}`);
-	});
-
 	onClientEvent("DamageDealt", (data) => {
-		ViewmodelController.playSwing();
 		const mobModel = findMobById(data.mobId);
 		if (mobModel && mobModel.PrimaryPart) {
 			showDamageNumber(mobModel.PrimaryPart.Position, data.damage, data.damage === 0);
@@ -182,7 +182,6 @@ export function initialize(): void {
 
 	onClientEvent("PlayerDied", (data) => {
 		print(`[Death] You died! Respawning in ${data.respawnTime}s...`);
-		inCombat = false;
 	});
 
 	onClientEvent("PlayerRespawned", (data) => {

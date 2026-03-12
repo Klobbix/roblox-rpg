@@ -7,10 +7,10 @@ export interface GatheringNodeConfig {
 	expReward: number;
 	lootTableId: string;
 	respawnTime: number;
-	/** Tool itemType required (any tool for this skill works, better = faster) */
+	/** Tool required for this node (any tool for this skill works) */
 	toolRequired: boolean;
-	/** Base gather time in seconds (modified by tool speed) */
-	gatherTime: number;
+	/** Number of swings needed to deplete this node with a tier-1 tool */
+	hitsRequired: number;
 }
 
 export const GatheringNodeConfigs: Record<string, GatheringNodeConfig> = {
@@ -24,7 +24,7 @@ export const GatheringNodeConfigs: Record<string, GatheringNodeConfig> = {
 		lootTableId: "copper_rock_loot",
 		respawnTime: 8,
 		toolRequired: true,
-		gatherTime: 3.0,
+		hitsRequired: 3,
 	},
 	tin_rock: {
 		id: "tin_rock",
@@ -35,7 +35,7 @@ export const GatheringNodeConfigs: Record<string, GatheringNodeConfig> = {
 		lootTableId: "tin_rock_loot",
 		respawnTime: 8,
 		toolRequired: true,
-		gatherTime: 3.0,
+		hitsRequired: 3,
 	},
 	iron_rock: {
 		id: "iron_rock",
@@ -46,7 +46,7 @@ export const GatheringNodeConfigs: Record<string, GatheringNodeConfig> = {
 		lootTableId: "iron_rock_loot",
 		respawnTime: 15,
 		toolRequired: true,
-		gatherTime: 4.0,
+		hitsRequired: 4,
 	},
 
 	// --- Woodcutting ---
@@ -59,7 +59,7 @@ export const GatheringNodeConfigs: Record<string, GatheringNodeConfig> = {
 		lootTableId: "normal_tree_loot",
 		respawnTime: 10,
 		toolRequired: true,
-		gatherTime: 3.0,
+		hitsRequired: 3,
 	},
 	oak_tree: {
 		id: "oak_tree",
@@ -70,7 +70,7 @@ export const GatheringNodeConfigs: Record<string, GatheringNodeConfig> = {
 		lootTableId: "oak_tree_loot",
 		respawnTime: 18,
 		toolRequired: true,
-		gatherTime: 4.5,
+		hitsRequired: 5,
 	},
 
 	// --- Fishing ---
@@ -83,6 +83,6 @@ export const GatheringNodeConfigs: Record<string, GatheringNodeConfig> = {
 		lootTableId: "fishing_spot_loot",
 		respawnTime: 5,
 		toolRequired: true,
-		gatherTime: 4.0,
+		hitsRequired: 4,
 	},
 };

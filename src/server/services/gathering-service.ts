@@ -8,6 +8,7 @@ import * as LootService from "./loot-service";
 
 const NODE_TAG = "GatherNode";
 const GATHER_RANGE = 10;
+const BASE_SWING_COOLDOWN = 2.0; // seconds, modified by tool speedMultiplier
 
 // --- Types ---
 
@@ -18,37 +19,25 @@ interface NodeState {
 	position: Vector3;
 	depleted: boolean;
 	respawnAt: number;
-	/** Original transparency to restore on respawn */
+	currentHits: number;
 	originalTransparency: number;
-}
-
-interface PlayerGatherState {
-	nodeId: string;
-	startTime: number;
-	gatherTime: number;
 }
 
 // --- State ---
 
 let nodeIdCounter = 0;
 const nodes = new Map<string, NodeState>();
-const playerGathering = new Map<Player, PlayerGatherState>();
+const playerLastHitTime = new Map<Player, number>();
 
 // --- Public API ---
 
-/** Start gathering a node. Validates all requirements. */
-export function startGather(player: Player, nodeId: string): void {
-	// Already gathering?
-	if (playerGathering.has(player)) {
-		fireClient(player, "GatherFailed", { reason: "Already gathering." });
-		return;
-	}
-
+/**
+ * Called when the player swings a tool at a gathering node.
+ * Each call is one hit; depletes when hits reach hitsRequired.
+ */
+export function hitNode(player: Player, nodeId: string): void {
 	const node = nodes.get(nodeId);
-	if (!node) {
-		fireClient(player, "GatherFailed", { reason: "Node not found." });
-		return;
-	}
+	if (!node) return;
 
 	if (node.depleted) {
 		fireClient(player, "GatherFailed", { reason: "This node is depleted." });
@@ -72,13 +61,13 @@ export function startGather(player: Player, nodeId: string): void {
 	const skillProgress = SkillService.getSkillProgress(player, config.skillId);
 	if (skillProgress.level < config.levelRequired) {
 		fireClient(player, "GatherFailed", {
-			reason: `Requires ${config.skillId} level ${config.levelRequired}. You are level ${skillProgress.level}.`,
+			reason: `Requires ${config.skillId} level ${config.levelRequired}.`,
 		});
 		return;
 	}
 
-	// Tool check
-	let gatherTime = config.gatherTime;
+	// Tool check + derive swing cooldown from tool speed
+	let swingCooldown = BASE_SWING_COOLDOWN;
 	if (config.toolRequired) {
 		const tool = SkillService.findBestTool(player, config.skillId);
 		if (!tool) {
@@ -87,25 +76,43 @@ export function startGather(player: Player, nodeId: string): void {
 			});
 			return;
 		}
-		gatherTime = config.gatherTime * tool.speedMultiplier;
+		swingCooldown = BASE_SWING_COOLDOWN * tool.speedMultiplier;
 	}
 
-	// Start gathering
-	playerGathering.set(player, {
-		nodeId,
-		startTime: os.clock(),
-		gatherTime,
-	});
+	// Per-player swing cooldown
+	const now = os.clock();
+	const lastHit = playerLastHitTime.get(player) ?? 0;
+	if (now - lastHit < swingCooldown) return;
+	playerLastHitTime.set(player, now);
 
-	fireClient(player, "GatherStarted", { nodeId, gatherTime });
-}
+	// Apply hit
+	node.currentHits++;
 
-/** Cancel an in-progress gather. */
-export function cancelGather(player: Player): void {
-	playerGathering.delete(player);
+	if (node.currentHits >= config.hitsRequired) {
+		completeNode(player, node);
+	}
 }
 
 // --- Internal ---
+
+function completeNode(player: Player, node: NodeState): void {
+	const config = GatheringNodeConfigs[node.configId];
+	if (!config) return;
+
+	const drops = LootService.rollLoot(config.lootTableId);
+	for (const drop of drops) {
+		InventoryService.addItem(player, drop.itemId, drop.quantity);
+		fireClient(player, "GatherComplete", {
+			nodeId: node.nodeId,
+			itemId: drop.itemId,
+			quantity: drop.quantity,
+		});
+	}
+
+	SkillService.grantSkillExp(player, config.skillId, config.expReward);
+
+	depleteNode(node.nodeId);
+}
 
 function registerNode(instance: BasePart, configId: string, parentModel?: Model): void {
 	const config = GatheringNodeConfigs[configId];
@@ -120,7 +127,6 @@ function registerNode(instance: BasePart, configId: string, parentModel?: Model)
 	instance.SetAttribute("NodeId", nodeId);
 	instance.SetAttribute("NodeConfigId", configId);
 
-	// Also stamp the NodeId on the parent Model so client click-detection finds it
 	if (parentModel) {
 		parentModel.SetAttribute("NodeId", nodeId);
 	}
@@ -132,6 +138,7 @@ function registerNode(instance: BasePart, configId: string, parentModel?: Model)
 		position: instance.Position,
 		depleted: false,
 		respawnAt: 0,
+		currentHits: 0,
 		originalTransparency: instance.Transparency,
 	});
 }
@@ -145,8 +152,6 @@ function depleteNode(nodeId: string): void {
 
 	node.depleted = true;
 	node.respawnAt = os.clock() + config.respawnTime;
-
-	// Visual feedback: make it semi-transparent
 	node.instance.Transparency = 0.7;
 
 	fireAllClients("NodeDepleted", { nodeId });
@@ -158,63 +163,15 @@ function respawnNode(nodeId: string): void {
 
 	node.depleted = false;
 	node.respawnAt = 0;
+	node.currentHits = 0;
 	node.instance.Transparency = node.originalTransparency;
 
 	fireAllClients("NodeRespawned", { nodeId });
 }
 
-function completeGather(player: Player, gatherState: PlayerGatherState): void {
-	playerGathering.delete(player);
-
-	const node = nodes.get(gatherState.nodeId);
-	if (!node || node.depleted) return;
-
-	const config = GatheringNodeConfigs[node.configId];
-	if (!config) return;
-
-	// Re-validate range
-	const rootPart = player.Character?.FindFirstChild("HumanoidRootPart") as Part | undefined;
-	if (!rootPart) return;
-	const distance = rootPart.Position.sub(node.position).Magnitude;
-	if (distance > GATHER_RANGE * 1.5) return;
-
-	// Roll loot
-	const drops = LootService.rollLoot(config.lootTableId);
-	if (drops.size() === 0) return;
-
-	// Give items and EXP
-	for (const drop of drops) {
-		InventoryService.addItem(player, drop.itemId, drop.quantity);
-		fireClient(player, "GatherComplete", {
-			nodeId: gatherState.nodeId,
-			itemId: drop.itemId,
-			quantity: drop.quantity,
-		});
-	}
-
-	SkillService.grantSkillExp(player, config.skillId, config.expReward);
-
-	// Deplete node
-	depleteNode(gatherState.nodeId);
-}
-
-/** Game loop: check gather completion and node respawns. */
+/** Game loop: check node respawns only. */
 function update(_dt: number): void {
 	const now = os.clock();
-
-	// Check gather completions
-	playerGathering.forEach((gatherState, player) => {
-		if (!player.IsDescendantOf(Players)) {
-			playerGathering.delete(player);
-			return;
-		}
-
-		if (now - gatherState.startTime >= gatherState.gatherTime) {
-			completeGather(player, gatherState);
-		}
-	});
-
-	// Check node respawns
 	nodes.forEach((node, nodeId) => {
 		if (node.depleted && node.respawnAt > 0 && now >= node.respawnAt) {
 			respawnNode(nodeId);
@@ -222,7 +179,6 @@ function update(_dt: number): void {
 	});
 }
 
-/** Create test gathering nodes if none are found. */
 function createTestNodes(): void {
 	const testNodes = [
 		{ configId: "copper_rock", x: -30, z: 40 },
@@ -243,7 +199,6 @@ function createTestNodes(): void {
 		part.CanCollide = true;
 		part.Position = new Vector3(entry.x, 5, entry.z);
 
-		// Visual style per skill
 		if (config.skillId === "mining") {
 			part.Size = new Vector3(3, 3, 3);
 			part.Color = Color3.fromRGB(139, 90, 43);
@@ -258,7 +213,6 @@ function createTestNodes(): void {
 			part.Material = Enum.Material.Water;
 		}
 
-		// Name billboard
 		const billboard = new Instance("BillboardGui");
 		billboard.Adornee = part;
 		billboard.Size = new UDim2(0, 120, 0, 25);
@@ -286,7 +240,6 @@ function createTestNodes(): void {
 // --- Initialize ---
 
 export function initialize(): void {
-	// Scan for tagged nodes
 	const taggedNodes = CollectionService.GetTagged(NODE_TAG);
 	for (const instance of taggedNodes) {
 		const configId = instance.GetAttribute("NodeConfigId") as string | undefined;
@@ -298,12 +251,11 @@ export function initialize(): void {
 			if (primary) {
 				registerNode(primary, configId, instance);
 			} else {
-				warn(`[GatheringService] Model "${instance.Name}" has no PrimaryPart — set one in Studio`);
+				warn(`[GatheringService] Model "${instance.Name}" has no PrimaryPart`);
 			}
 		}
 	}
 
-	// Listen for nodes added at runtime
 	CollectionService.GetInstanceAddedSignal(NODE_TAG).Connect((instance) => {
 		const configId = instance.GetAttribute("NodeConfigId") as string | undefined;
 		if (!configId) return;
@@ -313,24 +265,20 @@ export function initialize(): void {
 			const primary = instance.PrimaryPart;
 			if (primary) {
 				registerNode(primary, configId, instance);
-			} else {
-				warn(`[GatheringService] Model "${instance.Name}" has no PrimaryPart — set one in Studio`);
 			}
 		}
 	});
 
-	// If no nodes found, create test ones
 	if (nodes.size() === 0) {
 		print("[GatheringService] No gather nodes found — creating test nodes");
 		createTestNodes();
 	}
 
-	// Clean up player gather state on leave
 	Players.PlayerRemoving.Connect((player) => {
-		playerGathering.delete(player);
+		playerLastHitTime.delete(player);
 	});
 
-	GameLoopService.registerSystem("Gathering", 25, update);
+	GameLoopService.registerSystem("Gathering", 4, update);
 
 	print("[GatheringService] Initialized");
 }

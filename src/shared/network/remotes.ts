@@ -5,13 +5,12 @@ import {
 	TabInventory,
 	EquipmentSlot,
 	InventoryItem,
-	SkillProgress,
 } from "shared/types/player";
 
 /** Events fired from client → server. */
 export interface ServerEventDefinitions {
-	EngageCombat: { mobId: string };
-	DisengageCombat: undefined;
+	/** Player swings their equipped item at a target. */
+	Swing: { targetId: string; targetType: "mob" | "node" };
 
 	// Inventory
 	PickupItem: { groundItemId: string };
@@ -22,10 +21,6 @@ export interface ServerEventDefinitions {
 	// Equipment
 	EquipItem: { slotIndex: number };
 	UnequipItem: { equipSlot: EquipmentSlot };
-
-	// Gathering
-	StartGather: { nodeId: string };
-	CancelGather: undefined;
 
 	// NPCs
 	InteractNPC: { npcId: string };
@@ -48,8 +43,6 @@ export interface ClientEventDefinitions {
 	PlayerDataError: string;
 
 	// Combat
-	CombatStarted: { mobId: string };
-	CombatEnded: { reason: string };
 	DamageDealt: { mobId: string; damage: number };
 	DamageTaken: { damage: number; currentHp: number; maxHp: number };
 
@@ -73,7 +66,6 @@ export interface ClientEventDefinitions {
 	// Skills / Gathering
 	SkillExpGained: { skillId: string; amount: number; totalExp: number; level: number };
 	SkillLevelUp: { skillId: string; newLevel: number };
-	GatherStarted: { nodeId: string; gatherTime: number };
 	GatherComplete: { nodeId: string; itemId: string; quantity: number };
 	GatherFailed: { reason: string };
 	NodeDepleted: { nodeId: string };
@@ -121,16 +113,13 @@ export interface ClientEventDefinitions {
  * Used for eager remote creation to avoid race conditions.
  */
 export const SERVER_EVENT_NAMES: readonly (keyof ServerEventDefinitions)[] = [
-	"EngageCombat",
-	"DisengageCombat",
+	"Swing",
 	"PickupItem",
 	"DropItem",
 	"MoveItem",
 	"UseItem",
 	"EquipItem",
 	"UnequipItem",
-	"StartGather",
-	"CancelGather",
 	"InteractNPC",
 	"SelectDialogueOption",
 	"CloseDialogue",
@@ -143,8 +132,6 @@ export const SERVER_EVENT_NAMES: readonly (keyof ServerEventDefinitions)[] = [
 export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
 	"PlayerDataLoaded",
 	"PlayerDataError",
-	"CombatStarted",
-	"CombatEnded",
 	"DamageDealt",
 	"DamageTaken",
 	"ExpGained",
@@ -158,7 +145,6 @@ export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
 	"EquipFailed",
 	"SkillExpGained",
 	"SkillLevelUp",
-	"GatherStarted",
 	"GatherComplete",
 	"GatherFailed",
 	"NodeDepleted",

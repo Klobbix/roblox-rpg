@@ -6,12 +6,12 @@ import { fireClient } from "server/network/server-network";
 import * as PlayerDataService from "./player-data-service";
 import * as LevelingService from "./leveling-service";
 import * as MobService from "./mob-service";
-import * as GameLoopService from "./game-loop-service";
 import * as LootService from "./loot-service";
 import * as EquipmentService from "./equipment-service";
 
 const DEFAULT_ATTACK_SPEED = 2.4; // seconds
 const RESPAWN_TIME = 5; // seconds
+const SWING_RANGE = 8; // studs
 
 // --- Types ---
 
@@ -19,8 +19,7 @@ interface PlayerCombatState {
 	currentHp: number;
 	maxHp: number;
 	stats: CombatStats;
-	targetMobId: string | undefined;
-	lastAttackTime: number;
+	lastSwingTime: number;
 	attackSpeed: number;
 	dead: boolean;
 }
@@ -31,33 +30,49 @@ const playerStates = new Map<Player, PlayerCombatState>();
 
 // --- Public API ---
 
-export function engageCombat(player: Player, mobId: string): void {
+/**
+ * Called when the player swings at a mob.
+ * Validates range and cooldown, then deals damage.
+ */
+export function swingAtMob(player: Player, mobId: string): void {
 	const state = playerStates.get(player);
 	if (!state || state.dead) return;
 
 	const mobState = MobService.getMobState(mobId);
 	if (!mobState || mobState.currentHp <= 0) return;
 
-	// Range sanity check
+	// Range check
 	const rootPart = player.Character?.FindFirstChild("HumanoidRootPart") as Part | undefined;
 	if (!rootPart || !mobState.instance.PrimaryPart) return;
 
 	const distance = rootPart.Position.sub(mobState.instance.PrimaryPart.Position).Magnitude;
-	if (distance > 50) return;
+	if (distance > SWING_RANGE) return;
 
-	state.targetMobId = mobId;
-	state.lastAttackTime = os.clock(); // brief delay before first hit
+	// Attack speed cooldown
+	const now = os.clock();
+	if (now - state.lastSwingTime < state.attackSpeed) return;
+	state.lastSwingTime = now;
 
+	// Deal damage
+	const damage = rollDamage(state.stats, mobState.config.stats);
+	const result = MobService.damageMob(mobId, damage, player);
+
+	// Mob retaliates
 	MobService.aggroMob(mobId, player);
-	fireClient(player, "CombatStarted", { mobId });
-}
 
-export function disengageCombat(player: Player): void {
-	const state = playerStates.get(player);
-	if (!state) return;
+	fireClient(player, "DamageDealt", { mobId, damage });
 
-	state.targetMobId = undefined;
-	fireClient(player, "CombatEnded", { reason: "manual" });
+	if (result.died) {
+		const exp = mobExpReward(mobState.config.level);
+		const levelResult = LevelingService.grantCombatExp(player, exp);
+		if (levelResult.leveledUp) {
+			recalculateStats(player);
+		}
+		fireClient(player, "MobDied", { mobId, expReward: exp });
+
+		const mobPos = mobState.instance.PrimaryPart?.Position ?? mobState.spawnPosition;
+		LootService.rollAndDropLoot(mobState.configId, mobPos, player);
+	}
 }
 
 /** Called by MobService (via callback) when a mob hits a player. */
@@ -68,7 +83,6 @@ export function damagePlayer(attackerStats: CombatStats, player: Player): void {
 	const damage = rollDamage(attackerStats, state.stats);
 	state.currentHp = math.max(0, state.currentHp - damage);
 
-	// Sync to Humanoid for visual
 	const humanoid = player.Character?.FindFirstChildOfClass("Humanoid");
 	if (humanoid) {
 		humanoid.Health = state.currentHp;
@@ -124,7 +138,6 @@ function onCharacterAdded(player: Player, character: Model): void {
 	const existingState = playerStates.get(player);
 	const wasRespawn = existingState?.dead === true;
 
-	// Wait for profile if not yet loaded
 	let profile = PlayerDataService.getProfile(player);
 	if (!profile) {
 		for (let i = 0; i < 100; i++) {
@@ -153,8 +166,7 @@ function onCharacterAdded(player: Player, character: Model): void {
 		currentHp: stats.maxHp,
 		maxHp: stats.maxHp,
 		stats,
-		targetMobId: undefined,
-		lastAttackTime: 0,
+		lastSwingTime: 0,
 		attackSpeed: weaponSpeed,
 		dead: false,
 	});
@@ -173,7 +185,6 @@ function onPlayerDied(player: Player): void {
 	if (!state || state.dead) return;
 
 	state.dead = true;
-	state.targetMobId = undefined;
 
 	const humanoid = player.Character?.FindFirstChildOfClass("Humanoid");
 	if (humanoid && humanoid.Health > 0) {
@@ -189,72 +200,12 @@ function onPlayerDied(player: Player): void {
 	});
 }
 
-/** Game loop: auto-attack for all players in combat. */
-function update(_dt: number): void {
-	const now = os.clock();
-
-	playerStates.forEach((state, player) => {
-		if (state.dead || !state.targetMobId) return;
-
-		// Validate target
-		const mobState = MobService.getMobState(state.targetMobId);
-		if (!mobState || mobState.currentHp <= 0) {
-			state.targetMobId = undefined;
-			fireClient(player, "CombatEnded", { reason: "target_died" });
-			return;
-		}
-
-		// Range check
-		const rootPart = player.Character?.FindFirstChild("HumanoidRootPart") as Part | undefined;
-		if (!rootPart || !mobState.instance.PrimaryPart) {
-			state.targetMobId = undefined;
-			return;
-		}
-
-		const distance = rootPart.Position.sub(mobState.instance.PrimaryPart.Position).Magnitude;
-		if (distance > mobState.config.attackRange * 2) {
-			state.targetMobId = undefined;
-			fireClient(player, "CombatEnded", { reason: "out_of_range" });
-			return;
-		}
-
-		// Cooldown
-		if (now - state.lastAttackTime < state.attackSpeed) return;
-
-		// Attack!
-		state.lastAttackTime = now;
-		const damage = rollDamage(state.stats, mobState.config.stats);
-		const result = MobService.damageMob(state.targetMobId, damage, player);
-
-		fireClient(player, "DamageDealt", { mobId: state.targetMobId, damage });
-
-		if (result.died) {
-			const exp = mobExpReward(mobState.config.level);
-			const levelResult = LevelingService.grantCombatExp(player, exp);
-			if (levelResult.leveledUp) {
-				recalculateStats(player);
-			}
-			fireClient(player, "MobDied", { mobId: state.targetMobId, expReward: exp });
-
-			// Roll and drop loot at mob's last position
-			const mobPos = mobState.instance.PrimaryPart?.Position ?? mobState.spawnPosition;
-			LootService.rollAndDropLoot(mobState.configId, mobPos, player);
-
-			state.targetMobId = undefined;
-		}
-	});
-}
-
 // --- Initialize ---
 
 export function initialize(): void {
-	// Wire up mob attack callback (breaks circular dependency)
 	MobService.setMobAttackCallback(damagePlayer);
-
-	// Wire up equipment change callback
 	EquipmentService.setEquipmentChangeCallback(recalculateStats);
 
-	// Character lifecycle
 	Players.PlayerAdded.Connect((player) => {
 		player.CharacterAdded.Connect((character) => {
 			task.spawn(() => onCharacterAdded(player, character));
@@ -273,9 +224,6 @@ export function initialize(): void {
 	Players.PlayerRemoving.Connect((player) => {
 		playerStates.delete(player);
 	});
-
-	// Register auto-attack loop
-	GameLoopService.registerSystem("Combat", 20, update);
 
 	print("[CombatService] Initialized");
 }
