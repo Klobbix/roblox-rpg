@@ -639,7 +639,7 @@ export function initialize(): void {
 
 	UserInputService.InputBegan.Connect((input, gameProcessed) => {
 		if (gameProcessed) return;
-		if (input.KeyCode === Enum.KeyCode.I || input.KeyCode === Enum.KeyCode.B) {
+		if (input.KeyCode === Enum.KeyCode.B) {
 			toggleInventory();
 		}
 	});
@@ -707,5 +707,5 @@ export function initialize(): void {
 		playerLevel = data.newLevel;
 	});
 
-	print("[InventoryController] Initialized — Press 'I' to open inventory");
+	print("[InventoryController] Initialized — Press 'B' to open inventory");
 }

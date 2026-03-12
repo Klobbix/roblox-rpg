@@ -1,5 +1,5 @@
 import * as ClientNetwork from "client/network/client-network";
-import { RenderController, CombatController, InventoryController, SkillController, NPCController, MapController, HUDController } from "client/controllers";
+import { RenderController, CombatController, InventoryController, SkillController, NPCController, MapController, HUDController, SprintController } from "client/controllers";
 import { onClientEvent } from "client/network/client-network";
 
 print("[Client] Initializing...");
@@ -34,7 +34,10 @@ HUDController.initialize();
 // 8. Map UI (world map, zone display)
 MapController.initialize();
 
-// 9. Render loop (register render systems before calling this)
+// 9. Sprint (shift to run + stamina bar)
+SprintController.initialize();
+
+// 10. Render loop (register render systems before calling this)
 RenderController.initialize();
 
 print("[Client] All systems ready");

@@ -211,7 +211,7 @@ function createZoneIndicator(): void {
 
 function createQuickBar(): void {
 	const buttons = [
-		{ key: "I", label: "Bag" },
+		{ key: "B", label: "Bag" },
 		{ key: "K", label: "Skills" },
 		{ key: "M", label: "Map" },
 	];

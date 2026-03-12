@@ -5,3 +5,4 @@ export * as SkillController from "./skill-controller";
 export * as NPCController from "./npc-controller";
 export * as MapController from "./map-controller";
 export * as HUDController from "./hud-controller";
+export * as SprintController from "./sprint-controller";
