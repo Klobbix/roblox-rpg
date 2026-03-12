@@ -13,6 +13,8 @@ import {
 	EquipmentService,
 	SkillService,
 	GatheringService,
+	NPCService,
+	ShopService,
 } from "server/services";
 import { onServerEvent } from "server/network/server-network";
 
@@ -47,6 +49,12 @@ SkillService.initialize();
 
 // 7.7. Gathering service (nodes, depletion, respawn — registers game loop)
 GatheringService.initialize();
+
+// 7.8. NPC service (NPC spawning, dialogue management)
+NPCService.initialize();
+
+// 7.9. Shop service (buy/sell — wires NPC callbacks)
+ShopService.initialize();
 
 // 8. Mob service (registers AI game loop system)
 MobService.initialize();
@@ -110,6 +118,32 @@ onServerEvent("StartGather", (player, data) => {
 
 onServerEvent("CancelGather", (player) => {
 	GatheringService.cancelGather(player);
+});
+
+// NPC / Dialogue
+onServerEvent("InteractNPC", (player, data) => {
+	NPCService.interactNPC(player, data.npcId);
+});
+
+onServerEvent("SelectDialogueOption", (player, data) => {
+	NPCService.selectDialogueOption(player, data.optionIndex);
+});
+
+onServerEvent("CloseDialogue", (player) => {
+	NPCService.closeDialogue(player);
+});
+
+// Shopping
+onServerEvent("BuyItem", (player, data) => {
+	ShopService.buyItem(player, data.shopId, data.itemIndex, data.quantity);
+});
+
+onServerEvent("SellItem", (player, data) => {
+	ShopService.sellItem(player, data.tab, data.slotIndex, data.quantity);
+});
+
+onServerEvent("CloseShop", (player) => {
+	ShopService.closeShop(player);
 });
 
 print("[Server] All systems ready");

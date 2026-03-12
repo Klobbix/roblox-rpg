@@ -33,3 +33,12 @@ export {
 	skillLevelFromTotalExp,
 } from "./skills";
 export { GatheringNodeConfig, GatheringNodeConfigs } from "./gathering-nodes";
+export { NPCConfig, NPCType, NPCConfigs } from "./npcs";
+export {
+	DialogueAction,
+	DialogueOption,
+	DialogueNode,
+	DialogueConfig,
+	DialogueConfigs,
+} from "./dialogues";
+export { ShopItem, ShopConfig, ShopConfigs, SELL_PRICE_MULTIPLIER } from "./shops";

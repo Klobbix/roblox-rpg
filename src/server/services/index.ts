@@ -11,3 +11,5 @@ export * as LootService from "./loot-service";
 export * as EquipmentService from "./equipment-service";
 export * as SkillService from "./skill-service";
 export * as GatheringService from "./gathering-service";
+export * as NPCService from "./npc-service";
+export * as ShopService from "./shop-service";

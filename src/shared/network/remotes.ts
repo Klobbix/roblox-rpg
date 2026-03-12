@@ -26,6 +26,16 @@ export interface ServerEventDefinitions {
 	// Gathering
 	StartGather: { nodeId: string };
 	CancelGather: undefined;
+
+	// NPCs
+	InteractNPC: { npcId: string };
+	SelectDialogueOption: { optionIndex: number };
+	CloseDialogue: undefined;
+
+	// Shopping
+	BuyItem: { shopId: string; itemIndex: number; quantity: number };
+	SellItem: { tab: InventoryTab; slotIndex: number; quantity: number };
+	CloseShop: undefined;
 }
 
 /** Events fired from server → client. */
@@ -74,6 +84,28 @@ export interface ClientEventDefinitions {
 		position: { x: number; y: number; z: number };
 	};
 	GroundItemRemoved: { groundItemId: string };
+
+	// NPCs / Dialogue
+	DialogueOpened: {
+		npcId: string;
+		npcName: string;
+		nodeId: string;
+		text: string;
+		options: { label: string }[];
+	};
+	DialogueClosed: undefined;
+
+	// Shopping
+	ShopOpened: {
+		shopId: string;
+		shopName: string;
+		items: { itemId: string; buyPrice: number; stock: number }[];
+	};
+	ShopClosed: undefined;
+	ShopError: { reason: string };
+
+	// Currency
+	GoldUpdated: { gold: number };
 }
 
 /**
@@ -91,6 +123,12 @@ export const SERVER_EVENT_NAMES: readonly (keyof ServerEventDefinitions)[] = [
 	"UnequipItem",
 	"StartGather",
 	"CancelGather",
+	"InteractNPC",
+	"SelectDialogueOption",
+	"CloseDialogue",
+	"BuyItem",
+	"SellItem",
+	"CloseShop",
 ];
 
 export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
@@ -118,6 +156,12 @@ export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
 	"NodeRespawned",
 	"GroundItemSpawned",
 	"GroundItemRemoved",
+	"DialogueOpened",
+	"DialogueClosed",
+	"ShopOpened",
+	"ShopClosed",
+	"ShopError",
+	"GoldUpdated",
 ];
 
 /** Folder names used in ReplicatedStorage for remote organization */

@@ -42,19 +42,28 @@ Gear up and get stronger.
 
 ## Phase 5: Skills & Tools
 Gathering and non-combat progression.
-claude --resume 4a5e6160-68b7-4ad9-b17f-275456bce51d
-- [ ] **Skill data configs** — Skills: Mining, Woodcutting, Fishing (MVP set). Skill definitions: `{ id, name, tools: ToolId[], gatherNodes: NodeId[] }`. Skill EXP curves (can share or differ from combat leveling).
-- [ ] **Tool system** — Tool items: Pickaxe, Hatchet, Fishing Rod with tier progression (Bronze → Iron → Steel → ...). Tool configs: `{ tier, skillId, speed, levelRequirement }`. Better tools = faster gather speed. Server validates player has correct tool equipped/in-inventory.
-- [ ] **Gathering nodes** — Node data configs: `{ id, name, skillId, levelRequired, expReward, lootTableId, respawnTime, toolRequired }`. Nodes placed in Studio, tagged via CollectionService. Server-side interaction: validate proximity, skill level, tool ownership. Depletion and respawn timer. Gather animation on client (timed to server tick).
-- [ ] **Skill UI** — Skills tab showing all skills, current level, EXP bar, EXP to next level. Floating EXP drop text on gather.
+
+- [x] **Skill data configs** — Skills: Mining, Woodcutting, Fishing (MVP set). Skill definitions: `{ id, name, tools: ToolId[], gatherNodes: NodeId[] }`. Skill EXP curves (can share or differ from combat leveling).
+- [x] **Tool system** — Tool items: Pickaxe, Hatchet, Fishing Rod with tier progression (Bronze → Iron → Steel → ...). Tool configs: `{ tier, skillId, speed, levelRequirement }`. Better tools = faster gather speed. Server validates player has correct tool equipped/in-inventory.
+- [x] **Gathering nodes** — Node data configs: `{ id, name, skillId, levelRequired, expReward, lootTableId, respawnTime, toolRequired }`. Nodes placed in Studio, tagged via CollectionService. Server-side interaction: validate proximity, skill level, tool ownership. Depletion and respawn timer. Gather animation on client (timed to server tick).
+- [x] **Skill UI** — Skills tab showing all skills, current level, EXP bar, EXP to next level. Floating EXP drop text on gather.
+
+Manual Studio Setup (Phase 5)
+- [ ] Place Parts/Models in Workspace tagged "GatheringNode" with a GatheringNodeId string attribute (e.g., "copper_rock", "normal_tree", "fishing_spot"). Without these, the server auto-creates test nodes near origin.
+
 
 ## Phase 6: NPCs & Towns
 Bring the world to life.
 
-- [ ] **NPC system** — NPC data configs: `{ id, name, type: "merchant" | "questGiver" | "dialogue", dialogueId?, shopId? }`. NPCs placed in Studio, tagged, mapped to configs. Client interaction (click/proximity prompt) → server validates → opens UI.
-- [ ] **Dialogue system** — Dialogue trees defined as data: `{ nodes: [{ text, options: [{ label, nextNodeId?, action? }] }] }`. Actions: open shop, start quest, give item, teleport. Client renders dialogue UI, server processes actions.
-- [ ] **Merchant / shop system** — Shop configs: `{ id, name, items: [{ itemId, price, stock? }] }`. Buy: server validates currency, inventory space, deducts gold, adds item. Sell: server calculates sell price (percentage of buy), removes item, adds gold.
-- [ ] **Currency** — Gold as primary currency stored in player profile. Display in UI HUD. All transactions server-authoritative.
+- [x] **NPC system** — NPC data configs: `{ id, name, type: "merchant" | "questGiver" | "dialogue", dialogueId?, shopId? }`. NPCs placed in Studio, tagged, mapped to configs. Client interaction (click/proximity prompt) → server validates → opens UI.
+- [x] **Dialogue system** — Dialogue trees defined as data: `{ nodes: [{ text, options: [{ label, nextNodeId?, action? }] }] }`. Actions: open shop, start quest, give item, teleport. Client renders dialogue UI, server processes actions.
+- [x] **Merchant / shop system** — Shop configs: `{ id, name, items: [{ itemId, price, stock? }] }`. Buy: server validates currency, inventory space, deducts gold, adds item. Sell: server calculates sell price (percentage of buy), removes item, adds gold.
+- [x] **Currency** — Gold as primary currency stored in player profile. Display in UI HUD. All transactions server-authoritative.
+
+### Manual Studio Setup (Phase 6)
+- [ ] **Place NPC Parts/Models** — Add Parts in Workspace tagged `"NPC"` with an `NPCConfigId` string attribute (e.g., `"general_store_owner"`, `"weapon_smith"`). Without these, the system auto-creates test NPCs near the origin.
+- [ ] **Replace placeholder NPC models** — Current NPCs are simple Part-based placeholders. Create proper NPC Models in Studio and tag them appropriately.
+- [ ] **Tune shop prices** — Playtest and adjust buy prices in `shared/data/shops.ts` and sell prices in `shared/data/items.ts`.
 
 ## Phase 7: Map System & Teleportation
 Connect multiple maps together.
