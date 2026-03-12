@@ -1,0 +1,94 @@
+# Tale MVP — Development Phases
+
+## Phase 1: Core Framework
+Set up the foundational architecture that all systems build on.
+
+- [x] **Project structure** — Organize `src/` into `client/`, `server/`, `shared/` with subfolders: `services/`, `controllers/`, `data/`, `network/`, `types/`, `utils/`
+- [x] **Networking layer** — Typed remote event/function definitions in `shared/network/`. Wrapper that handles serialization, rate-limiting, and validation. Namespace remotes by system (Combat, Inventory, etc.)
+- [x] **Player data system** — ProfileService-style DataStore wrapper with session locking, auto-save, and structured player profile type. Load on join, cache in memory, save on leave.
+- [x] **Entity system** — Base entity management using CollectionService tags. Factory functions to spawn entities from data configs. Object pooling for reusable instances.
+- [x] **Game loop** — Server-side tick loop for updating mobs, spawners, and world systems. Client-side render loop for interpolation and UI updates.
+
+## Phase 2: Character & Combat
+Get a player into the world, moving, and fighting.
+
+- [x] **Character stats** — Define stat types (HP, Attack, Defense, Strength, etc.) in shared data. Server-authoritative stat calculation from base + level + equipment bonuses.
+- [x] **Leveling & EXP** — EXP curve config (scaling formula per level). Grant EXP on mob kill and skill actions. Level-up detection and stat recalculation. Client notification on level-up.
+- [x] **Basic combat system** — Server-side hit validation (range check, cooldown check, target alive check). Damage formula: `damage = f(attackerStats, defenderStats, weapon)`. Attack cooldowns based on weapon speed. Death and respawn handling.
+- [x] **Mob system** — Mob data configs: `{ id, name, level, stats, attackSpeed, aggroRange, respawnTime, lootTableId }`. Mob AI state machine: Idle → Aggro → Chase → Attack → Reset → Idle. Leash distance (return to spawn if pulled too far). Health bars (client-side UI from server-replicated HP).
+- [x] **Spawner system** — Spawner configs: `{ mobId, count, radius, respawnDelay }`. Server tracks alive mobs per spawner, respawns on death timer. Data-driven — place spawner instances in Studio, tag them, config maps to mob data.
+
+### Manual Studio Setup (Phase 2)
+- [ ] **Replace placeholder mob models** — Current mobs are simple Part-based placeholders. Create proper mob Models in Studio (or import meshes) and store them in ServerStorage. Update `mob-service.ts` `createMobModel()` to clone templates instead of building from Parts.
+- [ ] **Place spawner Parts** — To use data-driven spawners, add Parts in Workspace tagged `"Spawner"` with a `SpawnerConfigId` string attribute (e.g., `"spawn_goblins"`). Without these, the system auto-creates test spawners near the origin.
+- [ ] **Tune combat numbers** — Playtest and adjust EXP curve, damage formula, mob stats, and attack speeds in `shared/data/stats.ts` and `shared/data/mobs.ts`.
+
+## Phase 3: Loot & Inventory
+Players earn and manage items.
+
+- [x] **Item data configs** — Item definitions: `{ id, name, type, icon, stackable, maxStack, rarity, description }`. Item types: Equipment, Consumable, Material, Tool, Quest, Currency. Rarity tiers with color coding.
+- [x] **Loot table system** — Loot table configs: `{ entries: [{ itemId, weight, minQty, maxQty }] }`. Roll function: weighted random selection, supports multiple rolls per kill. Mobs reference loot tables by ID. Server-only weights — client never sees drop chances.
+- [x] **Inventory system** — Fixed-size inventory grid (e.g., 28 slots, RuneScape-style). Server-authoritative add/remove/move/stack operations. Overflow protection (drop or reject if full). Serialized in player profile for persistence.
+- [x] **Inventory UI** — Client-side grid display. Drag-and-drop or click to move items. Right-click context menu (Use, Drop, Examine). Item tooltips with stats and description.
+- [x] **Ground items** — Dropped items appear in world with despawn timer. Pickup via interaction (server validates proximity and inventory space). Loot ownership timer (killer gets priority, then public).
+
+## Phase 4: Equipment
+Gear up and get stronger.
+
+- [x] **Equipment data** — Extend item configs for equipment: `{ slot, statBonuses: { attack?, defense?, strength?, hp? }, levelRequirement, skillRequirements? }`. Equipment slots: Head, Body, Legs, Feet, Hands, Weapon, Shield, Ring, Amulet, Cape.
+- [x] **Equip/unequip system** — Server validates: correct slot, meets level/skill requirements, item exists in inventory. Equipping moves item from inventory to equipment slot (and vice versa). Stat recalculation on equip change.
+- [x] **Equipment UI** — Character paper-doll display showing equipped items. Click equipment slot to unequip. Visual update on character model (stretch goal for MVP — can use simple part-based indicators).
+- [x] **Combat stat integration** — Damage and defense formulas pull from equipment bonuses. Weapon determines attack speed and damage type.
+
+## Phase 5: Skills & Tools
+Gathering and non-combat progression.
+claude --resume 4a5e6160-68b7-4ad9-b17f-275456bce51d
+- [ ] **Skill data configs** — Skills: Mining, Woodcutting, Fishing (MVP set). Skill definitions: `{ id, name, tools: ToolId[], gatherNodes: NodeId[] }`. Skill EXP curves (can share or differ from combat leveling).
+- [ ] **Tool system** — Tool items: Pickaxe, Hatchet, Fishing Rod with tier progression (Bronze → Iron → Steel → ...). Tool configs: `{ tier, skillId, speed, levelRequirement }`. Better tools = faster gather speed. Server validates player has correct tool equipped/in-inventory.
+- [ ] **Gathering nodes** — Node data configs: `{ id, name, skillId, levelRequired, expReward, lootTableId, respawnTime, toolRequired }`. Nodes placed in Studio, tagged via CollectionService. Server-side interaction: validate proximity, skill level, tool ownership. Depletion and respawn timer. Gather animation on client (timed to server tick).
+- [ ] **Skill UI** — Skills tab showing all skills, current level, EXP bar, EXP to next level. Floating EXP drop text on gather.
+
+## Phase 6: NPCs & Towns
+Bring the world to life.
+
+- [ ] **NPC system** — NPC data configs: `{ id, name, type: "merchant" | "questGiver" | "dialogue", dialogueId?, shopId? }`. NPCs placed in Studio, tagged, mapped to configs. Client interaction (click/proximity prompt) → server validates → opens UI.
+- [ ] **Dialogue system** — Dialogue trees defined as data: `{ nodes: [{ text, options: [{ label, nextNodeId?, action? }] }] }`. Actions: open shop, start quest, give item, teleport. Client renders dialogue UI, server processes actions.
+- [ ] **Merchant / shop system** — Shop configs: `{ id, name, items: [{ itemId, price, stock? }] }`. Buy: server validates currency, inventory space, deducts gold, adds item. Sell: server calculates sell price (percentage of buy), removes item, adds gold.
+- [ ] **Currency** — Gold as primary currency stored in player profile. Display in UI HUD. All transactions server-authoritative.
+
+## Phase 7: Map System & Teleportation
+Connect multiple maps together.
+
+- [ ] **Map data configs** — Map definitions: `{ id, name, placeId, recommendedLevel, connections: [{ targetMapId, spawnPoint }] }`. Each map is a separate Roblox Place within the same Universe.
+- [ ] **Teleportation** — TeleportService to move players between Places. Save player data before teleport. Load and validate data on arrival. Spawn at correct entry point based on origin map.
+- [ ] **Zone definitions** — Zones within a map tagged in Studio. Zone configs: `{ id, name, type: "combat" | "town" | "gathering", mapId }`. Used for UI display (zone name on enter), music, and mob spawner association.
+- [ ] **Map UI** — World map showing discovered maps and connections. Minimap or zone indicator in HUD.
+
+## Phase 8: Polish & Integration
+Connect all systems and prepare for playtesting.
+
+- [ ] **HUD** — Health bar, EXP bar, minimap/zone name, currency display, quick-access buttons.
+- [ ] **Death & respawn** — On death: respawn at nearest town, keep inventory (MVP — no item loss). Short respawn timer. Clear combat state.
+- [ ] **Save integrity** — Validate saved data on load (handle schema migrations). Backup profiles periodically. Handle edge cases: disconnect during combat, teleport failures, double-login.
+- [ ] **Basic anti-cheat** — Remote rate limiting, server-side validation on all actions, stat sanity checks, speed checks on movement.
+- [ ] **Playtesting pass** — Create one complete map with: 3-5 mob types at varying levels, a town with merchant and quest giver, mining/woodcutting/fishing nodes, zone transitions. Balance EXP curves, damage formulas, loot rates. Test full loop: spawn → level → loot → equip → gather → shop → teleport.
+
+---
+
+## Data Config Example (Reference)
+```typescript
+// src/shared/data/mobs.ts
+export const MobConfigs = {
+  goblin: {
+    id: "goblin",
+    name: "Goblin",
+    level: 3,
+    stats: { hp: 15, attack: 4, defense: 2, strength: 3 },
+    attackSpeed: 2.4,
+    aggroRange: 8,
+    leashRange: 30,
+    respawnTime: 15,
+    lootTableId: "goblin_drops",
+  },
+} as const satisfies Record<string, MobConfig>;
+```
