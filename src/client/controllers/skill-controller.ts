@@ -268,11 +268,11 @@ function showFloatingExp(skillId: string, amount: number): void {
 function findGatheringNode(part: BasePart): Model | undefined {
 	let current: Instance | undefined = part;
 	while (current) {
-		if (current.IsA("Model") && current.GetAttribute("GatheringNodeId") !== undefined) {
+		if (current.IsA("Model") && current.GetAttribute("NodeId") !== undefined) {
 			return current;
 		}
 		// Also check BasePart directly (test nodes are single Parts)
-		if (current.IsA("BasePart") && current.GetAttribute("GatheringNodeId") !== undefined) {
+		if (current.IsA("BasePart") && current.GetAttribute("NodeId") !== undefined) {
 			return current as unknown as Model;
 		}
 		current = current.Parent as Instance | undefined;
@@ -319,7 +319,7 @@ export function initialize(): void {
 
 		const nodeInstance = findGatheringNode(target);
 		if (nodeInstance) {
-			const nodeId = nodeInstance.GetAttribute("GatheringNodeId") as string;
+			const nodeId = nodeInstance.GetAttribute("NodeId") as string;
 			if (nodeId) {
 				fireServer("StartGather", { nodeId });
 			}

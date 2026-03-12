@@ -107,7 +107,7 @@ export function cancelGather(player: Player): void {
 
 // --- Internal ---
 
-function registerNode(instance: BasePart, configId: string): void {
+function registerNode(instance: BasePart, configId: string, parentModel?: Model): void {
 	const config = GatheringNodeConfigs[configId];
 	if (!config) {
 		warn(`[GatheringService] Unknown node config: ${configId}`);
@@ -119,6 +119,11 @@ function registerNode(instance: BasePart, configId: string): void {
 
 	instance.SetAttribute("NodeId", nodeId);
 	instance.SetAttribute("NodeConfigId", configId);
+
+	// Also stamp the NodeId on the parent Model so client click-detection finds it
+	if (parentModel) {
+		parentModel.SetAttribute("NodeId", nodeId);
+	}
 
 	nodes.set(nodeId, {
 		nodeId,
@@ -285,16 +290,32 @@ export function initialize(): void {
 	const taggedNodes = CollectionService.GetTagged(NODE_TAG);
 	for (const instance of taggedNodes) {
 		const configId = instance.GetAttribute("NodeConfigId") as string | undefined;
-		if (configId && instance.IsA("BasePart")) {
+		if (!configId) continue;
+		if (instance.IsA("BasePart")) {
 			registerNode(instance, configId);
+		} else if (instance.IsA("Model")) {
+			const primary = instance.PrimaryPart;
+			if (primary) {
+				registerNode(primary, configId, instance);
+			} else {
+				warn(`[GatheringService] Model "${instance.Name}" has no PrimaryPart — set one in Studio`);
+			}
 		}
 	}
 
 	// Listen for nodes added at runtime
 	CollectionService.GetInstanceAddedSignal(NODE_TAG).Connect((instance) => {
 		const configId = instance.GetAttribute("NodeConfigId") as string | undefined;
-		if (configId && instance.IsA("BasePart")) {
+		if (!configId) return;
+		if (instance.IsA("BasePart")) {
 			registerNode(instance, configId);
+		} else if (instance.IsA("Model")) {
+			const primary = instance.PrimaryPart;
+			if (primary) {
+				registerNode(primary, configId, instance);
+			} else {
+				warn(`[GatheringService] Model "${instance.Name}" has no PrimaryPart — set one in Studio`);
+			}
 		}
 	});
 

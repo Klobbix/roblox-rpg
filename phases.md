@@ -49,7 +49,7 @@ Gathering and non-combat progression.
 - [x] **Skill UI** — Skills tab showing all skills, current level, EXP bar, EXP to next level. Floating EXP drop text on gather.
 
 Manual Studio Setup (Phase 5)
-- [ ] Place Parts/Models in Workspace tagged "GatheringNode" with a GatheringNodeId string attribute (e.g., "copper_rock", "normal_tree", "fishing_spot"). Without these, the server auto-creates test nodes near origin.
+- [ ] Place Parts/Models in Workspace tagged "GatherNode" with a NodeConfigId string attribute (e.g., "copper_rock", "normal_tree", "fishing_spot"). Without these, the server auto-creates test nodes near origin.
 
 
 ## Phase 6: NPCs & Towns
