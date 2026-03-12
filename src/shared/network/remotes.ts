@@ -36,6 +36,9 @@ export interface ServerEventDefinitions {
 	BuyItem: { shopId: string; itemIndex: number; quantity: number };
 	SellItem: { tab: InventoryTab; slotIndex: number; quantity: number };
 	CloseShop: undefined;
+
+	// Teleportation
+	RequestTeleport: { portalId: string };
 }
 
 /** Events fired from server → client. */
@@ -106,6 +109,11 @@ export interface ClientEventDefinitions {
 
 	// Currency
 	GoldUpdated: { gold: number };
+
+	// Zones / Maps
+	ZoneChanged: { zoneId: string; zoneName: string; zoneType: string };
+	TeleportStarted: { targetMapId: string; mapName: string };
+	TeleportFailed: { reason: string };
 }
 
 /**
@@ -129,6 +137,7 @@ export const SERVER_EVENT_NAMES: readonly (keyof ServerEventDefinitions)[] = [
 	"BuyItem",
 	"SellItem",
 	"CloseShop",
+	"RequestTeleport",
 ];
 
 export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
@@ -162,6 +171,9 @@ export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
 	"ShopClosed",
 	"ShopError",
 	"GoldUpdated",
+	"ZoneChanged",
+	"TeleportStarted",
+	"TeleportFailed",
 ];
 
 /** Folder names used in ReplicatedStorage for remote organization */

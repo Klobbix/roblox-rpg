@@ -15,6 +15,8 @@ import {
 	GatheringService,
 	NPCService,
 	ShopService,
+	ZoneService,
+	MapTeleportService,
 } from "server/services";
 import { onServerEvent } from "server/network/server-network";
 
@@ -55,6 +57,12 @@ NPCService.initialize();
 
 // 7.9. Shop service (buy/sell — wires NPC callbacks)
 ShopService.initialize();
+
+// 7.10. Zone service (zone detection — registers game loop)
+ZoneService.initialize();
+
+// 7.11. Teleport service (portals, map transitions)
+MapTeleportService.initialize();
 
 // 8. Mob service (registers AI game loop system)
 MobService.initialize();
@@ -144,6 +152,11 @@ onServerEvent("SellItem", (player, data) => {
 
 onServerEvent("CloseShop", (player) => {
 	ShopService.closeShop(player);
+});
+
+// Teleportation
+onServerEvent("RequestTeleport", (player, data) => {
+	MapTeleportService.requestTeleport(player, data.portalId);
 });
 
 print("[Server] All systems ready");

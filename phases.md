@@ -68,15 +68,21 @@ Bring the world to life.
 ## Phase 7: Map System & Teleportation
 Connect multiple maps together.
 
-- [ ] **Map data configs** — Map definitions: `{ id, name, placeId, recommendedLevel, connections: [{ targetMapId, spawnPoint }] }`. Each map is a separate Roblox Place within the same Universe.
-- [ ] **Teleportation** — TeleportService to move players between Places. Save player data before teleport. Load and validate data on arrival. Spawn at correct entry point based on origin map.
-- [ ] **Zone definitions** — Zones within a map tagged in Studio. Zone configs: `{ id, name, type: "combat" | "town" | "gathering", mapId }`. Used for UI display (zone name on enter), music, and mob spawner association.
-- [ ] **Map UI** — World map showing discovered maps and connections. Minimap or zone indicator in HUD.
+- [x] **Map data configs** — Map definitions: `{ id, name, placeId, recommendedLevel, connections: [{ targetMapId, spawnPoint }] }`. Each map is a separate Roblox Place within the same Universe.
+- [x] **Teleportation** — TeleportService to move players between Places. Save player data before teleport. Load and validate data on arrival. Spawn at correct entry point based on origin map.
+- [x] **Zone definitions** — Zones within a map tagged in Studio. Zone configs: `{ id, name, type: "combat" | "town" | "gathering", mapId }`. Used for UI display (zone name on enter), music, and mob spawner association.
+- [x] **Map UI** — World map showing discovered maps and connections. Minimap or zone indicator in HUD.
+
+### Manual Studio Setup (Phase 7)
+- [ ] **Configure Place IDs** — Set real `placeId` values in `shared/data/maps.ts` for each map. Create Places in the Roblox Universe. PlaceId 0 is a dev placeholder.
+- [ ] **Place Zone volumes** — Add transparent Parts in Workspace tagged `"Zone"` with a `ZoneConfigId` string attribute (e.g., `"lumbridge_town"`, `"chicken_field"`). Without these, the system auto-creates test zones.
+- [ ] **Place Map Portals** — Add Parts tagged `"MapPortal"` with `MapId` and `ConnectionId` string attributes. Without these, the system auto-creates a test portal.
+- [ ] **Place Spawn Points** — Add Parts named after spawn point IDs (e.g., `"from_meadows"`, `"from_forest"`) so arriving players teleport to the correct location.
 
 ## Phase 8: Polish & Integration
 Connect all systems and prepare for playtesting.
 
-- [ ] **HUD** — Health bar, EXP bar, minimap/zone name, currency display, quick-access buttons.
+- [x] **HUD** — Health bar, EXP bar, minimap/zone name, currency display, quick-access buttons.
 - [ ] **Death & respawn** — On death: respawn at nearest town, keep inventory (MVP — no item loss). Short respawn timer. Clear combat state.
 - [ ] **Save integrity** — Validate saved data on load (handle schema migrations). Backup profiles periodically. Handle edge cases: disconnect during combat, teleport failures, double-login.
 - [ ] **Basic anti-cheat** — Remote rate limiting, server-side validation on all actions, stat sanity checks, speed checks on movement.

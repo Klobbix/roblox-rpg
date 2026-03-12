@@ -3,3 +3,5 @@ export * as CombatController from "./combat-controller";
 export * as InventoryController from "./inventory-controller";
 export * as SkillController from "./skill-controller";
 export * as NPCController from "./npc-controller";
+export * as MapController from "./map-controller";
+export * as HUDController from "./hud-controller";

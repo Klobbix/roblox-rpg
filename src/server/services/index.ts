@@ -13,3 +13,5 @@ export * as SkillService from "./skill-service";
 export * as GatheringService from "./gathering-service";
 export * as NPCService from "./npc-service";
 export * as ShopService from "./shop-service";
+export * as ZoneService from "./zone-service";
+export * as MapTeleportService from "./teleport-service";

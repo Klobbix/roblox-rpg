@@ -42,3 +42,5 @@ export {
 	DialogueConfigs,
 } from "./dialogues";
 export { ShopItem, ShopConfig, ShopConfigs, SELL_PRICE_MULTIPLIER } from "./shops";
+export { MapConnection, MapConfig, MapConfigs, DEFAULT_MAP_ID } from "./maps";
+export { ZoneType, ZoneConfig, ZoneConfigs, DEFAULT_ZONE_NAME } from "./zones";
