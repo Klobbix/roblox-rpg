@@ -199,6 +199,20 @@ function registerNPC(instance: Model | BasePart, configId: string): void {
 		instance,
 		position,
 	});
+
+	// Create ProximityPrompt if one doesn't already exist, then wire it
+	let prompt = instance.FindFirstChildWhichIsA("ProximityPrompt");
+	if (!prompt) {
+		prompt = new Instance("ProximityPrompt");
+		prompt.ActionText = "Talk";
+		prompt.ObjectText = config.name;
+		prompt.MaxActivationDistance = INTERACT_RANGE;
+		prompt.HoldDuration = 0;
+		prompt.Parent = instance;
+	}
+	prompt.Triggered.Connect((player) => {
+		interactNPC(player, npcId);
+	});
 }
 
 /** Create test NPCs if none are found. */
@@ -242,14 +256,6 @@ function createTestNPCs(): void {
 		nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0);
 		nameLabel.Parent = billboard;
 
-		// Interaction prompt
-		const prompt = new Instance("ProximityPrompt");
-		prompt.ActionText = "Talk";
-		prompt.ObjectText = config.name;
-		prompt.MaxActivationDistance = INTERACT_RANGE;
-		prompt.HoldDuration = 0;
-		prompt.Parent = part;
-
 		CollectionService.AddTag(part, NPC_TAG);
 		part.SetAttribute("NPCConfigId", entry.configId);
 		part.Parent = Workspace;
@@ -280,16 +286,6 @@ export function initialize(): void {
 	if (npcs.size() === 0) {
 		print("[NPCService] No NPCs found — creating test NPCs");
 		createTestNPCs();
-	}
-
-	// Handle ProximityPrompt interactions
-	for (const [, npc] of npcs) {
-		const prompt = npc.instance.FindFirstChildWhichIsA("ProximityPrompt");
-		if (prompt) {
-			prompt.Triggered.Connect((player) => {
-				interactNPC(player, npc.npcId);
-			});
-		}
 	}
 
 	// Clean up dialogue state on leave

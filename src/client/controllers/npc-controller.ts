@@ -1,4 +1,4 @@
-import { Players, UserInputService } from "@rbxts/services";
+import { Players, UserInputService, GuiService } from "@rbxts/services";
 import { ItemConfigs, RARITY_COLORS } from "shared/data/items";
 import { InventoryTab } from "shared/types/player";
 import { fireServer, onClientEvent } from "client/network/client-network";
@@ -42,6 +42,45 @@ let shopGoldLabel: TextLabel;
 // HUD gold display
 let goldHudFrame: Frame;
 let goldHudLabel: TextLabel;
+
+// --- Player Control Lock ---
+
+/** Track how many UIs currently need control locked, so nested open/close stays correct. */
+let controlLockCount = 0;
+
+function lockPlayerControl(): void {
+	controlLockCount++;
+	if (controlLockCount > 1) return; // Already locked
+
+	// Freeze movement
+	const humanoid = localPlayer.Character?.FindFirstChildOfClass("Humanoid");
+	if (humanoid) {
+		humanoid.WalkSpeed = 0;
+		humanoid.JumpPower = 0;
+	}
+
+	// Show and unlock cursor
+	UserInputService.MouseBehavior = Enum.MouseBehavior.Default;
+	UserInputService.MouseIconEnabled = true;
+	GuiService.TouchControlsEnabled = false;
+}
+
+function unlockPlayerControl(): void {
+	controlLockCount = math.max(0, controlLockCount - 1);
+	if (controlLockCount > 0) return; // Another UI still needs the lock
+
+	// Restore movement
+	const humanoid = localPlayer.Character?.FindFirstChildOfClass("Humanoid");
+	if (humanoid) {
+		humanoid.WalkSpeed = 16;
+		humanoid.JumpPower = 50;
+	}
+
+	// Hide cursor and re-lock mouse to center
+	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter;
+	UserInputService.MouseIconEnabled = false;
+	GuiService.TouchControlsEnabled = true;
+}
 
 // --- Dialogue UI ---
 
@@ -155,11 +194,14 @@ function showDialogue(
 
 	dialogueFrame.Visible = true;
 	dialogueOpen = true;
+	lockPlayerControl();
 }
 
 function hideDialogue(): void {
+	if (!dialogueOpen) return;
 	dialogueFrame.Visible = false;
 	dialogueOpen = false;
+	unlockPlayerControl();
 }
 
 // --- Shop UI ---
@@ -358,12 +400,15 @@ function showShop(
 
 	shopFrame.Visible = true;
 	shopOpen = true;
+	lockPlayerControl();
 }
 
 function hideShop(): void {
+	if (!shopOpen) return;
 	shopFrame.Visible = false;
 	shopOpen = false;
 	currentShopId = "";
+	unlockPlayerControl();
 }
 
 // --- Gold HUD ---

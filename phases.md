@@ -61,8 +61,8 @@ Bring the world to life.
 - [x] **Currency** — Gold as primary currency stored in player profile. Display in UI HUD. All transactions server-authoritative.
 
 ### Manual Studio Setup (Phase 6)
-- [ ] **Place NPC Parts/Models** — Add Parts in Workspace tagged `"NPC"` with an `NPCConfigId` string attribute (e.g., `"general_store_owner"`, `"weapon_smith"`). Without these, the system auto-creates test NPCs near the origin.
-- [ ] **Replace placeholder NPC models** — Current NPCs are simple Part-based placeholders. Create proper NPC Models in Studio and tag them appropriately.
+- [ ] **Place NPC Parts/Models** — Tag a Part or Model in Workspace with `"NPC"` and set a `NPCConfigId` string attribute (e.g., `"general_store_owner"`, `"weapon_smith"`). For Models, a PrimaryPart must be set. A ProximityPrompt is added automatically — do not add one manually. Without tagged instances, the system auto-creates test NPCs near the origin.
+- [ ] **Replace placeholder NPC models** — Current NPCs are simple Part-based placeholders. Create proper NPC Models in Studio, set a PrimaryPart, tag them `"NPC"`, and set the `NPCConfigId` attribute.
 - [ ] **Tune shop prices** — Playtest and adjust buy prices in `shared/data/shops.ts` and sell prices in `shared/data/items.ts`.
 
 ## Phase 7: Map System & Teleportation
