@@ -1,4 +1,5 @@
 import { Players, UserInputService } from "@rbxts/services";
+import * as CursorController from "./cursor-controller";
 import {
 	InventoryItem,
 	InventoryTab,
@@ -612,8 +613,10 @@ function toggleInventory(): void {
 	inventoryOpen = !inventoryOpen;
 	inventoryFrame.Visible = inventoryOpen;
 	if (inventoryOpen) {
+		CursorController.push();
 		rebuildSlots();
 	} else {
+		CursorController.pop();
 		selectedSlot = undefined;
 		hideTooltip();
 	}

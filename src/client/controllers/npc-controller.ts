@@ -1,4 +1,5 @@
-import { Players, UserInputService, GuiService } from "@rbxts/services";
+import { Players, UserInputService } from "@rbxts/services";
+import * as CursorController from "./cursor-controller";
 import { ItemConfigs, RARITY_COLORS } from "shared/data/items";
 import { InventoryTab } from "shared/types/player";
 import { fireServer, onClientEvent } from "client/network/client-network";
@@ -45,41 +46,22 @@ let goldHudLabel: TextLabel;
 
 // --- Player Control Lock ---
 
-/** Track how many UIs currently need control locked, so nested open/close stays correct. */
-let controlLockCount = 0;
-
 function lockPlayerControl(): void {
-	controlLockCount++;
-	if (controlLockCount > 1) return; // Already locked
-
-	// Freeze movement
 	const humanoid = localPlayer.Character?.FindFirstChildOfClass("Humanoid");
 	if (humanoid) {
 		humanoid.WalkSpeed = 0;
 		humanoid.JumpPower = 0;
 	}
-
-	// Show and unlock cursor
-	UserInputService.MouseBehavior = Enum.MouseBehavior.Default;
-	UserInputService.MouseIconEnabled = true;
-	GuiService.TouchControlsEnabled = false;
+	CursorController.push();
 }
 
 function unlockPlayerControl(): void {
-	controlLockCount = math.max(0, controlLockCount - 1);
-	if (controlLockCount > 0) return; // Another UI still needs the lock
-
-	// Restore movement
 	const humanoid = localPlayer.Character?.FindFirstChildOfClass("Humanoid");
 	if (humanoid) {
 		humanoid.WalkSpeed = 16;
 		humanoid.JumpPower = 50;
 	}
-
-	// Hide cursor and re-lock mouse to center
-	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter;
-	UserInputService.MouseIconEnabled = false;
-	GuiService.TouchControlsEnabled = true;
+	CursorController.pop();
 }
 
 // --- Dialogue UI ---
