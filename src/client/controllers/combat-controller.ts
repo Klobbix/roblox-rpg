@@ -118,10 +118,12 @@ function findMobById(mobId: string): Model | undefined {
 }
 
 export function initialize(): void {
-	// Click to engage combat
+	// Click to engage combat / swing viewmodel
 	UserInputService.InputBegan.Connect((input, gameProcessed) => {
 		if (gameProcessed) return;
 		if (input.UserInputType !== Enum.UserInputType.MouseButton1) return;
+
+		ViewmodelController.playSwing();
 
 		const target = mouse.Target;
 		if (!target) return;
