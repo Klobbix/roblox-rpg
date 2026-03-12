@@ -18,6 +18,55 @@ Get a player into the world, moving, and fighting.
 - [x] **Mob system** — Mob data configs: `{ id, name, level, stats, attackSpeed, aggroRange, respawnTime, lootTableId }`. Mob AI state machine: Idle → Aggro → Chase → Attack → Reset → Idle. Leash distance (return to spawn if pulled too far). Health bars (client-side UI from server-replicated HP).
 - [x] **Spawner system** — Spawner configs: `{ mobId, count, radius, respawnDelay }`. Server tracks alive mobs per spawner, respawns on death timer. Data-driven — place spawner instances in Studio, tag them, config maps to mob data.
 
+How Mob Spawning Works
+
+Mobs are entirely server-generated — MobService.createMobModel() builds the model in code (a red box + ball head). There are no Studio models involved. You never place a mob directly; you place a Spawner Part that references configs.
+
+The two configs you need to define
+
+1. src/shared/data/mobs.ts — the mob itself
+   iron_golem: {
+   id: "iron_golem",
+   name: "Iron Golem",
+   level: 10,
+   stats: { maxHp: 80, attack: 12, strength: 10, defense: 8 },
+   attackSpeed: 3.5,   // seconds between attacks
+   aggroRange: 12,     // studs; 0 = passive
+   leashRange: 40,     // studs from spawn before resetting
+   attackRange: 5,     // studs to melee
+   walkSpeed: 8,       // studs/sec
+   respawnTime: 30,    // seconds (informational; respawnDelay on spawner drives this)
+   lootTableId: "iron_golem_drops",
+   }
+
+2. src/shared/data/spawners.ts — the spawner config
+   spawn_iron_golems: {
+   id: "spawn_iron_golems",
+   mobId: "iron_golem",   // must match MobConfig.id
+   count: 2,              // max alive at once
+   radius: 15,            // spread radius in studs
+   respawnDelay: 30,      // seconds after death to respawn
+   }
+
+3. Loot table in src/shared/data/loot.ts — add an entry matching lootTableId.
+
+  ---
+Placing it in Studio
+
+In your Workspace, place any BasePart where you want the spawner center:
+
+┌───────────────────────────┬─────────────────────────────────────────────────────┐
+│         Property          │                        Value                        │
+├───────────────────────────┼─────────────────────────────────────────────────────┤
+│ CollectionService Tag     │ Spawner                                             │
+├───────────────────────────┼─────────────────────────────────────────────────────┤
+│ Attribute SpawnerConfigId │ "spawn_iron_golems" (must match SpawnerConfigs key) │
+└───────────────────────────┴─────────────────────────────────────────────────────┘
+
+That's it. On server start, SpawnerService finds all Parts tagged Spawner, reads their SpawnerConfigId attribute, and calls registerSpawner() with the part's position. If no tagged parts are found it falls back to the hardcoded test spawners
+near the origin.
+
+
 ### Manual Studio Setup (Phase 2)
 - [ ] **Replace placeholder mob models** — Current mobs are simple Part-based placeholders. Create proper mob Models in Studio (or import meshes) and store them in ServerStorage. Update `mob-service.ts` `createMobModel()` to clone templates instead of building from Parts.
 - [ ] **Place spawner Parts** — To use data-driven spawners, add Parts in Workspace tagged `"Spawner"` with a `SpawnerConfigId` string attribute (e.g., `"spawn_goblins"`). Without these, the system auto-creates test spawners near the origin.
@@ -87,23 +136,4 @@ Connect all systems and prepare for playtesting.
 - [ ] **Save integrity** — Validate saved data on load (handle schema migrations). Backup profiles periodically. Handle edge cases: disconnect during combat, teleport failures, double-login.
 - [ ] **Basic anti-cheat** — Remote rate limiting, server-side validation on all actions, stat sanity checks, speed checks on movement.
 - [ ] **Playtesting pass** — Create one complete map with: 3-5 mob types at varying levels, a town with merchant and quest giver, mining/woodcutting/fishing nodes, zone transitions. Balance EXP curves, damage formulas, loot rates. Test full loop: spawn → level → loot → equip → gather → shop → teleport.
-
----
-
-## Data Config Example (Reference)
-```typescript
-// src/shared/data/mobs.ts
-export const MobConfigs = {
-  goblin: {
-    id: "goblin",
-    name: "Goblin",
-    level: 3,
-    stats: { hp: 15, attack: 4, defense: 2, strength: 3 },
-    attackSpeed: 2.4,
-    aggroRange: 8,
-    leashRange: 30,
-    respawnTime: 15,
-    lootTableId: "goblin_drops",
-  },
-} as const satisfies Record<string, MobConfig>;
-```
+- 

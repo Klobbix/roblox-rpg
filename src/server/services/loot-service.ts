@@ -1,6 +1,5 @@
 import { MobConfigs } from "shared/data/mobs";
 import { LootTableConfigs } from "shared/data/loot-tables";
-import { ItemConfigs } from "shared/data/items";
 import * as GroundItemService from "./ground-item-service";
 import * as InventoryService from "./inventory-service";
 
@@ -23,23 +22,9 @@ export function rollAndDropLoot(configId: string, position: Vector3, killer: Pla
 			continue;
 		}
 
-		// Attempt to add directly to inventory first
-		if (InventoryService.canAddItem(killer, drop.itemId, drop.quantity)) {
-			InventoryService.addItem(killer, drop.itemId, drop.quantity);
-		} else {
-			// Inventory full — drop on ground with ownership
-			const offset = new Vector3(
-				math.random() * 3 - 1.5,
-				0,
-				math.random() * 3 - 1.5,
-			);
-			GroundItemService.spawnGroundItem(
-				drop.itemId,
-				drop.quantity,
-				position.add(offset),
-				killer,
-			);
-		}
+		// Spawn all loot as ground items with ownership priority for the killer
+		const offset = new Vector3(math.random() * 4 - 2, 0, math.random() * 4 - 2);
+		GroundItemService.spawnGroundItem(drop.itemId, drop.quantity, position.add(offset), killer);
 	}
 }
 
