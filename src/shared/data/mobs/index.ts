@@ -1,5 +1,8 @@
 import { CombatStats } from "shared/types/player";
+import { LootTable } from "shared/data/loot-tables";
 import { ChickenConfigs } from "./chicken";
+import { GoblinConfigs } from "./goblin";
+import { SkeletonConfigs } from "./skeleton";
 
 export interface MobConfig {
 	id: string;
@@ -12,9 +15,11 @@ export interface MobConfig {
 	attackRange: number; // studs to melee
 	walkSpeed: number; // studs per second
 	respawnTime: number; // seconds
-	lootTableId: string;
+	loot: LootTable;
 }
 
 export const MobConfigs: Record<string, MobConfig> = {
 	...ChickenConfigs,
+	...GoblinConfigs,
+	...SkeletonConfigs,
 };

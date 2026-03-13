@@ -1,5 +1,5 @@
 import { MobConfigs } from "shared/data/mobs";
-import { LootTableConfigs } from "shared/data/loot-tables";
+import { LootTable } from "shared/data/loot-tables";
 import * as GroundItemService from "./ground-item-service";
 import * as InventoryService from "./inventory-service";
 
@@ -10,10 +10,7 @@ export function rollAndDropLoot(configId: string, position: Vector3, killer: Pla
 	const mobConfig = MobConfigs[configId];
 	if (!mobConfig) return;
 
-	const lootTable = LootTableConfigs[mobConfig.lootTableId];
-	if (!lootTable) return;
-
-	const drops = rollLoot(lootTable.id);
+	const drops = rollLoot(mobConfig.loot);
 
 	for (const drop of drops) {
 		// Gold coins go directly into the player's gold balance
@@ -29,16 +26,13 @@ export function rollAndDropLoot(configId: string, position: Vector3, killer: Pla
 }
 
 /** Roll a loot table and return the items dropped. Server-only logic. */
-export function rollLoot(lootTableId: string): { itemId: string; quantity: number }[] {
-	const lootTable = LootTableConfigs[lootTableId];
-	if (!lootTable) return [];
-
+export function rollLoot(loot: LootTable): { itemId: string; quantity: number }[] {
 	const results: { itemId: string; quantity: number }[] = [];
 
-	for (let roll = 0; roll < lootTable.rolls; roll++) {
+	for (let roll = 0; roll < loot.rolls; roll++) {
 		// Each entry is rolled independently (not mutually exclusive)
-		for (const entry of lootTable.entries) {
-			// Normalize weight to a 0-100 scale: weight is the % chance of dropping
+		for (const entry of loot.entries) {
+			// weight is the % chance of dropping
 			const chance = math.random() * 100;
 			if (chance <= entry.weight) {
 				const qty =

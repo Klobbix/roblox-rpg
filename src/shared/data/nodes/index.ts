@@ -1,6 +1,10 @@
 import { OreNodesConfigs } from "./ores";
 import { TreesConfigs } from "./trees";
 import { FishingNodeConfigs } from "./fishing";
+import { LootTable } from "shared/data/loot-tables";
+
+export type { LootTable } from "shared/data/loot-tables";
+export type { LootEntry } from "shared/data/loot-tables";
 
 /** Data config for a gathering node type */
 export interface GatheringNodeConfig {
@@ -9,7 +13,7 @@ export interface GatheringNodeConfig {
 	skillId: string;
 	levelRequired: number;
 	expReward: number;
-	lootTableId: string;
+	loot: LootTable;
 	respawnTime: number;
 	/** Tool required for this node (any tool for this skill works) */
 	toolRequired: boolean;

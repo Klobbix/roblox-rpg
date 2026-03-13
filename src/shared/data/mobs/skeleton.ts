@@ -12,6 +12,14 @@ export const SkeletonConfigs: Record<string, MobConfig> = {
 		attackRange: 5,
 		walkSpeed: 12,
 		respawnTime: 20,
-		lootTableId: "skeleton_drops",
+		loot: {
+			rolls: 2,
+			entries: [
+				{ itemId: "bones", weight: 100, minQty: 1, maxQty: 2 },
+				{ itemId: "gold_coins", weight: 70, minQty: 5, maxQty: 25 },
+				{ itemId: "iron_sword", weight: 8, minQty: 1, maxQty: 1 },
+				{ itemId: "skull", weight: 25, minQty: 1, maxQty: 1 },
+			],
+		},
 	},
 };

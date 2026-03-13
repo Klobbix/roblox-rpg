@@ -12,6 +12,12 @@ export const ChickenConfigs: Record<string, MobConfig> = {
 		attackRange: 4,
 		walkSpeed: 6,
 		respawnTime: 10,
-		lootTableId: "chicken_drops",
+		loot: {
+			rolls: 1,
+			entries: [
+				{ itemId: "raw_chicken", weight: 80, minQty: 1, maxQty: 1 },
+				{ itemId: "feather", weight: 60, minQty: 1, maxQty: 3 },
+			],
+		},
 	},
 };

@@ -7,9 +7,12 @@ export const IronConfigs: Record<string, GatheringNodeConfig> = {
 		skillId: "mining",
 		levelRequired: 15,
 		expReward: 35,
-		lootTableId: "iron_rock_loot",
 		respawnTime: 15,
 		toolRequired: true,
 		hitsRequired: 4,
+		loot: {
+			rolls: 1,
+			entries: [{ itemId: "iron_ore", weight: 100, minQty: 1, maxQty: 1 }],
+		},
 	},
 };

@@ -1,15 +1,21 @@
 import { GatheringNodeConfig } from "../index";
 
 export const ShrimpNodeConfigs: Record<string, GatheringNodeConfig> = {
-	copper_rock: {
-		id: "copper_rock",
-		name: "Copper Rock",
-		skillId: "mining",
+	fishing_spot: {
+		id: "fishing_spot",
+		name: "Fishing Spot",
+		skillId: "fishing",
 		levelRequired: 1,
-		expReward: 18,
-		lootTableId: "copper_rock_loot",
-		respawnTime: 8,
+		expReward: 20,
+		respawnTime: 5,
 		toolRequired: true,
-		hitsRequired: 3,
+		hitsRequired: 4,
+		loot: {
+			rolls: 1,
+			entries: [
+				{ itemId: "raw_shrimp", weight: 70, minQty: 1, maxQty: 1 },
+				{ itemId: "raw_trout", weight: 30, minQty: 1, maxQty: 1 },
+			],
+		},
 	},
 };

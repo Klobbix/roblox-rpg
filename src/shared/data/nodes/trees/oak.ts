@@ -7,9 +7,12 @@ export const OakTreeConfigs: Record<string, GatheringNodeConfig> = {
 		skillId: "woodcutting",
 		levelRequired: 15,
 		expReward: 38,
-		lootTableId: "oak_tree_loot",
 		respawnTime: 18,
 		toolRequired: true,
 		hitsRequired: 5,
+		loot: {
+			rolls: 1,
+			entries: [{ itemId: "oak_logs", weight: 100, minQty: 1, maxQty: 1 }],
+		},
 	},
 };

@@ -174,7 +174,7 @@ function completeNode(player: Player, node: NodeState): void {
 	const config = GatheringNodeConfigs[node.configId];
 	if (!config) return;
 
-	const drops = LootService.rollLoot(config.lootTableId);
+	const drops = LootService.rollLoot(config.loot);
 	for (const drop of drops) {
 		InventoryService.addItem(player, drop.itemId, drop.quantity);
 		fireClient(player, "GatherComplete", {

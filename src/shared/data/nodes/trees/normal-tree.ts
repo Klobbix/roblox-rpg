@@ -7,9 +7,12 @@ export const NormalTreeConfigs: Record<string, GatheringNodeConfig> = {
 		skillId: "woodcutting",
 		levelRequired: 1,
 		expReward: 25,
-		lootTableId: "normal_tree_loot",
 		respawnTime: 10,
 		toolRequired: true,
 		hitsRequired: 3,
+		loot: {
+			rolls: 1,
+			entries: [{ itemId: "logs", weight: 100, minQty: 1, maxQty: 1 }],
+		},
 	},
 };

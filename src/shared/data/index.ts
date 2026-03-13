@@ -22,7 +22,7 @@ export {
 	getEquipmentBonuses,
 	getWeaponAttackSpeed,
 } from "./items";
-export { LootTableEntry, LootTableConfig, LootTableConfigs } from "./loot-tables";
+export { LootEntry, LootTable } from "./loot-tables";
 export {
 	MAX_SKILL_LEVEL,
 	SkillConfig,
