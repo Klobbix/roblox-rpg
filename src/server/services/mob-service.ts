@@ -23,6 +23,12 @@ export interface MobState {
 	spawnerId: string | undefined;
 }
 
+// --- Constants ---
+
+const KNOCKBACK_DISTANCE = 5.5; // studs pushed away on hit
+const HIT_FLASH_DURATION = 0.2; // seconds of red glow
+const HIT_FLASH_COLOR = Color3.fromRGB(255, 50, 50);
+
 // --- State ---
 
 let mobIdCounter = 0;
@@ -136,6 +142,46 @@ export function getMobState(mobId: string): MobState | undefined {
 	return mobs.get(mobId);
 }
 
+interface PartSnapshot {
+	part: BasePart;
+	color: Color3;
+	material: Enum.Material;
+}
+
+/** Apply knockback and a brief red flash to a mob that was just hit. */
+function applyHitEffects(mob: MobState, attackerPosition?: Vector3): void {
+	const primaryPart = mob.instance.PrimaryPart;
+	if (!primaryPart) return;
+
+	// Knockback — push mob away from attacker on the horizontal plane
+	if (attackerPosition) {
+		const mobPos = primaryPart.Position;
+		const flat = new Vector3(mobPos.X - attackerPosition.X, 0, mobPos.Z - attackerPosition.Z);
+		if (flat.Magnitude > 0) {
+			primaryPart.CFrame = primaryPart.CFrame.add(flat.Unit.mul(KNOCKBACK_DISTANCE));
+		}
+	}
+
+	// Red flash — save original colors, set Neon red, restore after delay
+	const snapshots: PartSnapshot[] = [];
+	for (const child of mob.instance.GetDescendants()) {
+		if (child.IsA("BasePart")) {
+			snapshots.push({ part: child, color: child.Color, material: child.Material });
+			child.Color = HIT_FLASH_COLOR;
+			child.Material = Enum.Material.Neon;
+		}
+	}
+
+	task.delay(HIT_FLASH_DURATION, () => {
+		for (const snapshot of snapshots) {
+			if (snapshot.part.IsDescendantOf(Workspace)) {
+				snapshot.part.Color = snapshot.color;
+				snapshot.part.Material = snapshot.material;
+			}
+		}
+	});
+}
+
 /** Apply damage to a mob. Returns whether it died and current HP. */
 export function damageMob(
 	mobId: string,
@@ -165,6 +211,12 @@ export function damageMob(
 		killMob(mobId);
 		return { died: true, newHp: 0 };
 	}
+
+	// Visual hit feedback (only when mob survives — no point flashing a corpse)
+	const attackerRoot = attacker?.Character?.FindFirstChild("HumanoidRootPart") as
+		| BasePart
+		| undefined;
+	applyHitEffects(mob, attackerRoot?.Position);
 
 	return { died: false, newHp: mob.currentHp };
 }

@@ -32,8 +32,7 @@ export {
 	skillLevelFromTotalExp,
 } from "./skills";
 export { GatheringNodeConfig, GatheringNodeConfigs } from "./nodes";
-export { NPCConfig, NPCType, NPCConfigs } from "./npcs";
-export { DialogueAction, DialogueOption, DialogueNode, DialogueConfig } from "./dialogues";
+export { NPCConfig, NPCType, NPCConfigs, DialogueAction, DialogueOption, DialogueNode, DialogueConfig } from "./npcs";
 export { ShopItem, ShopConfig, ShopConfigs, SELL_PRICE_MULTIPLIER } from "./shops";
 export { MapConnection, MapConfig, MapConfigs, DEFAULT_MAP_ID } from "./maps";
 export { ZoneType, ZoneConfig, ZoneConfigs, DEFAULT_ZONE_NAME } from "./zones";
