@@ -21,5 +21,6 @@ export const GoblinConfigs: Record<string, MobConfig> = {
 				{ itemId: "bones", weight: 50, minQty: 1, maxQty: 1 },
 			],
 		},
+		spawners: [{ id: "spawn_goblins", count: 4, radius: 15, respawnDelay: 15 }],
 	},
 };

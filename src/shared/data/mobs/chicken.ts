@@ -19,5 +19,6 @@ export const ChickenConfigs: Record<string, MobConfig> = {
 				{ itemId: "feather", weight: 60, minQty: 1, maxQty: 3 },
 			],
 		},
+		spawners: [{ id: "spawn_chickens", count: 3, radius: 10, respawnDelay: 10 }],
 	},
 };

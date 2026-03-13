@@ -1,13 +1,29 @@
-import { CollectionService, Workspace } from "@rbxts/services";
-import { SpawnerConfig, SpawnerConfigs } from "shared/data/spawners";
-import { MobConfigs } from "shared/data/mobs";
+import { CollectionService } from "@rbxts/services";
+import { SpawnerEntry, MobConfigs } from "shared/data/mobs";
 import * as MobService from "./mob-service";
 
 const SPAWNER_TAG = "Spawner";
 
+interface ResolvedSpawner {
+	entry: SpawnerEntry;
+	mobId: string;
+}
+
+/** Flat lookup built at init: spawner id → { entry, mobId } */
+const spawnerLookup = new Map<string, ResolvedSpawner>();
+
+function buildSpawnerLookup(): void {
+	for (const [mobId, mob] of pairs(MobConfigs)) {
+		for (const entry of mob.spawners) {
+			spawnerLookup.set(entry.id, { entry, mobId });
+		}
+	}
+}
+
 interface SpawnerState {
 	configId: string;
-	config: SpawnerConfig;
+	config: SpawnerEntry;
+	mobId: string;
 	position: Vector3;
 	aliveMobIds: Set<string>;
 	pendingRespawns: number;
@@ -18,14 +34,9 @@ let spawnerIdCounter = 0;
 
 /** Register a spawner from a config at a position. */
 function registerSpawner(position: Vector3, configId: string): void {
-	const config = SpawnerConfigs[configId];
-	if (!config) {
+	const resolved = spawnerLookup.get(configId);
+	if (!resolved) {
 		warn(`[SpawnerService] Unknown spawner config: ${configId}`);
-		return;
-	}
-
-	if (!MobConfigs[config.mobId]) {
-		warn(`[SpawnerService] Spawner ${configId} references unknown mob: ${config.mobId}`);
 		return;
 	}
 
@@ -34,7 +45,8 @@ function registerSpawner(position: Vector3, configId: string): void {
 
 	const state: SpawnerState = {
 		configId,
-		config,
+		config: resolved.entry,
+		mobId: resolved.mobId,
 		position,
 		aliveMobIds: new Set(),
 		pendingRespawns: 0,
@@ -43,11 +55,11 @@ function registerSpawner(position: Vector3, configId: string): void {
 	spawners.set(spawnerId, state);
 
 	// Initial spawn
-	for (let i = 0; i < config.count; i++) {
+	for (let i = 0; i < state.config.count; i++) {
 		spawnMobForSpawner(spawnerId, state);
 	}
 
-	print(`[SpawnerService] Registered ${spawnerId} (${config.mobId} x${config.count})`);
+	print(`[SpawnerService] Registered ${spawnerId} (${state.mobId} x${state.config.count})`);
 }
 
 /** Spawn a single mob for a spawner at a random position within its radius. */
@@ -57,7 +69,7 @@ function spawnMobForSpawner(spawnerId: string, state: SpawnerState): void {
 	const offset = new Vector3(math.cos(angle) * dist, 0, math.sin(angle) * dist);
 	const position = state.position.add(offset);
 
-	const mobId = MobService.spawnMob(state.config.mobId, position, spawnerId);
+	const mobId = MobService.spawnMob(state.mobId, position, spawnerId);
 	if (mobId !== "") {
 		state.aliveMobIds.add(mobId);
 	}
@@ -102,6 +114,8 @@ export function createTestSpawners(): void {
 }
 
 export function initialize(): void {
+	buildSpawnerLookup();
+
 	// Wire up mob death callback
 	MobService.setMobDeathCallback(onMobDeath);
 

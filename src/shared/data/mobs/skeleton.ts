@@ -21,5 +21,6 @@ export const SkeletonConfigs: Record<string, MobConfig> = {
 				{ itemId: "skull", weight: 25, minQty: 1, maxQty: 1 },
 			],
 		},
+		spawners: [{ id: "spawn_skeletons", count: 2, radius: 12, respawnDelay: 20 }],
 	},
 };

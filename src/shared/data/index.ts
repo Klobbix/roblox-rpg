@@ -1,5 +1,4 @@
-export { MobConfig, MobConfigs } from "./mobs";
-export { SpawnerConfig, SpawnerConfigs } from "./spawners";
+export { SpawnerEntry, MobConfig, MobConfigs } from "./mobs";
 export {
 	MAX_COMBAT_LEVEL,
 	expBetweenLevels,
