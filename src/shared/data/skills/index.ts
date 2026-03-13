@@ -1,3 +1,7 @@
+import { MiningConfigs } from "./mining";
+import { WoodcuttingConfigs } from "./woodcutting";
+import { FishingConfigs } from "./fishing";
+
 /** Maximum skill level */
 export const MAX_SKILL_LEVEL = 99;
 
@@ -40,21 +44,9 @@ export function skillLevelFromTotalExp(totalExp: number): number {
 }
 
 export const SkillConfigs: Record<string, SkillConfig> = {
-	mining: {
-		id: "mining",
-		name: "Mining",
-		tools: ["bronze_pickaxe", "iron_pickaxe", "steel_pickaxe"],
-	},
-	woodcutting: {
-		id: "woodcutting",
-		name: "Woodcutting",
-		tools: ["bronze_hatchet", "iron_hatchet", "steel_hatchet"],
-	},
-	fishing: {
-		id: "fishing",
-		name: "Fishing",
-		tools: ["fishing_rod", "steel_fishing_rod"],
-	},
+	...MiningConfigs,
+	...WoodcuttingConfigs,
+	...FishingConfigs,
 };
 
 /** All skill IDs for iteration */

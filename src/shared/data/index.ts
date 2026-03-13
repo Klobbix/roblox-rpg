@@ -32,7 +32,7 @@ export {
 	totalSkillExpForLevel,
 	skillLevelFromTotalExp,
 } from "./skills";
-export { GatheringNodeConfig, GatheringNodeConfigs } from "./gathering-nodes";
+export { GatheringNodeConfig, GatheringNodeConfigs } from "./nodes";
 export { NPCConfig, NPCType, NPCConfigs } from "./npcs";
 export {
 	DialogueAction,

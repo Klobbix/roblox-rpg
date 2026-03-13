@@ -1,5 +1,5 @@
 import { CollectionService, Players, Workspace } from "@rbxts/services";
-import { GatheringNodeConfigs } from "shared/data/gathering-nodes";
+import { GatheringNodeConfigs } from "shared/data/nodes";
 import { fireClient, fireAllClients } from "server/network/server-network";
 import * as SkillService from "./skill-service";
 import * as InventoryService from "./inventory-service";
