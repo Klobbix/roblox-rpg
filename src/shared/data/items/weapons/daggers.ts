@@ -1,4 +1,4 @@
-import { ItemConfig, ItemRarity, ItemType } from "../types";
+import { ItemConfig, ItemRarity, ItemType, SwingStyle } from "../types";
 import { EquipmentSlot } from "../../../types";
 
 export const DaggerConfigs: Record<string, ItemConfig> = {
@@ -19,7 +19,7 @@ export const DaggerConfigs: Record<string, ItemConfig> = {
 		},
 		viewmodel: {
 			holdOffset: new CFrame(0.45, -0.52, -0.95).mul(CFrame.Angles(0, 0, math.rad(-8))),
-			swingStyle: "stab",
+			swingStyle: SwingStyle.Stab,
 			swingDuration: 0.22,
 		},
 	},

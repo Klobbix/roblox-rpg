@@ -1,5 +1,5 @@
 import { EquipmentSlot } from "shared/types/player";
-import { ItemConfig, ItemType, ItemRarity } from "../types";
+import { ItemConfig, ItemType, ItemRarity, SwingStyle } from "../types";
 
 const HOLD = new CFrame(0.42, -0.52, -1.0).mul(CFrame.Angles(0, 0, math.rad(-5)));
 
@@ -22,7 +22,7 @@ export const HatchetConfigs: Record<string, ItemConfig> = {
 		},
 		viewmodel: {
 			holdOffset: HOLD,
-			swingStyle: "chop",
+			swingStyle: SwingStyle.Chop,
 			swingDuration: 0.45,
 		},
 	},
@@ -44,7 +44,7 @@ export const HatchetConfigs: Record<string, ItemConfig> = {
 		},
 		viewmodel: {
 			holdOffset: HOLD,
-			swingStyle: "chop",
+			swingStyle: SwingStyle.Chop,
 			swingDuration: 0.42,
 		},
 	},
@@ -66,8 +66,8 @@ export const HatchetConfigs: Record<string, ItemConfig> = {
 		},
 		viewmodel: {
 			holdOffset: HOLD,
-			swingStyle: "chop",
-			swingDuration: 0.40,
+			swingStyle: SwingStyle.Chop,
+			swingDuration: 0.4,
 		},
 	},
 };

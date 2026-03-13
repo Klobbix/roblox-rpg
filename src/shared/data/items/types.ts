@@ -46,8 +46,13 @@ export interface EquipmentData {
 }
 
 // --- Viewmodel ---
-
-export type SwingStyle = "slash" | "stab" | "chop" | "cast";
+export enum SwingStyle {
+	Swing = "Swing",
+	Slash = "Slash",
+	Stab = "Stab",
+	Chop = "Chop",
+	Cast = "Cast",
+}
 
 /** First-person viewmodel config embedded in an item definition. */
 export interface ViewmodelConfig {

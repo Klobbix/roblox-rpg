@@ -1,5 +1,5 @@
 import { EquipmentSlot } from "shared/types/player";
-import { ItemConfig, ItemType, ItemRarity } from "../types";
+import { ItemConfig, ItemRarity, ItemType, SwingStyle } from "../types";
 
 const HOLD = new CFrame(0.42, -0.55, -1.05).mul(CFrame.Angles(0, 0, math.rad(-5)));
 
@@ -22,7 +22,7 @@ export const PickaxeConfigs: Record<string, ItemConfig> = {
 		},
 		viewmodel: {
 			holdOffset: new CFrame(1.0, -0.5, -1.2),
-			swingStyle: "chop",
+			swingStyle: SwingStyle.Chop,
 			swingDuration: 0.5,
 			modelName: "BronzePickaxe",
 		},
@@ -45,7 +45,7 @@ export const PickaxeConfigs: Record<string, ItemConfig> = {
 		},
 		viewmodel: {
 			holdOffset: HOLD,
-			swingStyle: "chop",
+			swingStyle: SwingStyle.Chop,
 			swingDuration: 0.48,
 		},
 	},
@@ -67,7 +67,7 @@ export const PickaxeConfigs: Record<string, ItemConfig> = {
 		},
 		viewmodel: {
 			holdOffset: HOLD,
-			swingStyle: "chop",
+			swingStyle: SwingStyle.Chop,
 			swingDuration: 0.45,
 		},
 	},

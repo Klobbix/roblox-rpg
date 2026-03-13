@@ -34,6 +34,8 @@ function buildViewmodel(itemId: string): void {
 	if (!item?.viewmodel) return;
 
 	const config = item.viewmodel;
+	currentConfig = config;
+
 	if (!config.modelName) return;
 
 	const camera = Workspace.CurrentCamera;
@@ -56,25 +58,26 @@ function buildViewmodel(itemId: string): void {
 	}
 	model.Parent = camera;
 	activeModel = model;
-	currentConfig = config;
 }
 
 // --- Animation ---
 
 function computeSwingDelta(style: SwingStyle, swingValue: number): CFrame {
 	switch (style) {
-		case "slash":
+		case SwingStyle.Slash:
 			return CFrame.Angles(swingValue * 0.3, 0, -swingValue * math.rad(65)).mul(
 				new CFrame(0, 0, -swingValue * 0.12),
 			);
-		case "stab":
+		case SwingStyle.Stab:
 			return new CFrame(0, 0, -swingValue * 0.45);
-		case "chop":
+		case SwingStyle.Chop:
 			return CFrame.Angles(swingValue * math.rad(80), 0, swingValue * 0.08).mul(
 				new CFrame(0, swingValue * 0.05, 0),
 			);
-		case "cast":
+		case SwingStyle.Cast:
 			return CFrame.Angles(-swingValue * math.rad(35), swingValue * math.rad(10), 0);
+		default:
+			return new CFrame(0,0,0);
 	}
 }
 
@@ -103,10 +106,6 @@ export function playSwing(): void {
 function update(dt: number): void {
 	const camera = Workspace.CurrentCamera;
 	if (!activeModel || !camera || !currentConfig) return;
-
-	const uiOpen = CursorController.isUnlocked();
-	setVisibility(uiOpen);
-	if (uiOpen) return;
 
 	idleTime += dt;
 

@@ -1,5 +1,6 @@
 import { ItemConfig, ItemRarity, ItemType } from "../types";
 import { EquipmentSlot } from "../../../types";
+import { SwingStyle } from "../types";
 
 export const SwordConfigs: Record<string, ItemConfig> = {
 	bronze_sword: {
@@ -18,8 +19,8 @@ export const SwordConfigs: Record<string, ItemConfig> = {
 			attackSpeed: 2.0,
 		},
 		viewmodel: {
-			holdOffset: new CFrame(0.50, -0.60, -1.10).mul(CFrame.Angles(0, 0, math.rad(-10))),
-			swingStyle: "slash",
+			holdOffset: new CFrame(0.5, -0.6, -1.1).mul(CFrame.Angles(0, 0, math.rad(-10))),
+			swingStyle: SwingStyle.Slash,
 			swingDuration: 0.32,
 		},
 	},
@@ -39,8 +40,8 @@ export const SwordConfigs: Record<string, ItemConfig> = {
 			attackSpeed: 2.4,
 		},
 		viewmodel: {
-			holdOffset: new CFrame(0.50, -0.62, -1.15).mul(CFrame.Angles(0, 0, math.rad(-12))),
-			swingStyle: "slash",
+			holdOffset: new CFrame(0.5, -0.62, -1.15).mul(CFrame.Angles(0, 0, math.rad(-12))),
+			swingStyle: SwingStyle.Slash,
 			swingDuration: 0.35,
 		},
 	},

@@ -1,5 +1,5 @@
 import { EquipmentSlot } from "shared/types/player";
-import { ItemConfig, ItemType, ItemRarity } from "../types";
+import { ItemConfig, ItemType, ItemRarity, SwingStyle } from "../types";
 
 export const FishingRodConfigs: Record<string, ItemConfig> = {
 	fishing_rod: {
@@ -19,9 +19,9 @@ export const FishingRodConfigs: Record<string, ItemConfig> = {
 			attackSpeed: 2.0,
 		},
 		viewmodel: {
-			holdOffset: new CFrame(0.40, -0.50, -0.90),
-			swingStyle: "cast",
-			swingDuration: 0.90,
+			holdOffset: new CFrame(0.4, -0.5, -0.9),
+			swingStyle: SwingStyle.Cast,
+			swingDuration: 0.9,
 		},
 	},
 	steel_fishing_rod: {
@@ -41,8 +41,8 @@ export const FishingRodConfigs: Record<string, ItemConfig> = {
 			attackSpeed: 2.0,
 		},
 		viewmodel: {
-			holdOffset: new CFrame(0.40, -0.50, -0.90),
-			swingStyle: "cast",
+			holdOffset: new CFrame(0.4, -0.5, -0.9),
+			swingStyle: SwingStyle.Cast,
 			swingDuration: 0.85,
 		},
 	},
