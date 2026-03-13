@@ -258,6 +258,10 @@ export function initialize(): void {
 		print(`[Skills] ${skillName} leveled up to ${data.newLevel}!`);
 	});
 
+	onClientEvent("NodeHit", (_data) => {
+		// Server handles visual changes; hook here for future hit effects (sounds, particles)
+	});
+
 	onClientEvent("NodeDepleted", (_data) => {
 		// Server handles visual changes
 	});

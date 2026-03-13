@@ -10,6 +10,11 @@ const NODE_TAG = "GatherNode";
 const GATHER_RANGE = 10;
 const BASE_SWING_COOLDOWN = 2.0; // seconds, modified by tool speedMultiplier
 
+// Progressive damage color (dark cracked brown-grey) and depleted appearance
+const DAMAGED_COLOR = Color3.fromRGB(70, 60, 50);
+const DEPLETED_COLOR = Color3.fromRGB(45, 42, 38);
+const DEPLETED_TRANSPARENCY = 0.35;
+
 // --- Types ---
 
 interface NodeState {
@@ -20,7 +25,12 @@ interface NodeState {
 	depleted: boolean;
 	respawnAt: number;
 	currentHits: number;
-	originalTransparency: number;
+}
+
+interface NodeVisuals {
+	parts: BasePart[];
+	colors: Color3[];
+	transparencies: number[];
 }
 
 // --- State ---
@@ -28,6 +38,67 @@ interface NodeState {
 let nodeIdCounter = 0;
 const nodes = new Map<string, NodeState>();
 const playerLastHitTime = new Map<Player, number>();
+const nodeVisuals = new Map<string, NodeVisuals>();
+
+// --- Visual Helpers ---
+
+/** Returns all BaseParts belonging to a node (handles plain parts and Models). */
+function getNodeParts(node: NodeState): BasePart[] {
+	const parent = node.instance.Parent;
+	if (parent && parent.IsA("Model") && parent !== Workspace) {
+		const parts: BasePart[] = [];
+		for (const desc of parent.GetDescendants()) {
+			if (desc.IsA("BasePart")) parts.push(desc);
+		}
+		return parts;
+	}
+	return [node.instance];
+}
+
+/** Caches original colors/transparencies on first call; returns cached on subsequent calls. */
+function cacheNodeVisuals(node: NodeState): NodeVisuals {
+	const existing = nodeVisuals.get(node.nodeId);
+	if (existing) return existing;
+
+	const parts = getNodeParts(node);
+	const colors: Color3[] = [];
+	const transparencies: number[] = [];
+	for (const part of parts) {
+		colors.push(part.Color);
+		transparencies.push(part.Transparency);
+	}
+
+	const visuals: NodeVisuals = { parts, colors, transparencies };
+	nodeVisuals.set(node.nodeId, visuals);
+	return visuals;
+}
+
+/** Lerps all node parts toward the damaged color based on hit progress (0–1). */
+function applyProgressVisual(node: NodeState, progress: number): void {
+	const v = cacheNodeVisuals(node);
+	for (let i = 0; i < v.parts.size(); i++) {
+		v.parts[i].Color = v.colors[i].Lerp(DAMAGED_COLOR, progress * 0.75);
+	}
+}
+
+/** Applies the fully-depleted appearance to all node parts. */
+function applyDepletedVisual(node: NodeState): void {
+	const v = cacheNodeVisuals(node);
+	for (const part of v.parts) {
+		part.Color = DEPLETED_COLOR;
+		part.Transparency = DEPLETED_TRANSPARENCY;
+	}
+}
+
+/** Restores all node parts to their original appearance. */
+function restoreNodeVisual(node: NodeState): void {
+	const v = nodeVisuals.get(node.nodeId);
+	if (!v) return;
+	for (let i = 0; i < v.parts.size(); i++) {
+		v.parts[i].Color = v.colors[i];
+		v.parts[i].Transparency = v.transparencies[i];
+	}
+}
 
 // --- Public API ---
 
@@ -88,6 +159,10 @@ export function hitNode(player: Player, nodeId: string): void {
 	// Apply hit
 	node.currentHits++;
 
+	const progress = node.currentHits / config.hitsRequired;
+	applyProgressVisual(node, progress);
+	fireAllClients("NodeHit", { nodeId: node.nodeId, currentHits: node.currentHits, hitsRequired: config.hitsRequired });
+
 	if (node.currentHits >= config.hitsRequired) {
 		completeNode(player, node);
 	}
@@ -139,7 +214,6 @@ function registerNode(instance: BasePart, configId: string, parentModel?: Model)
 		depleted: false,
 		respawnAt: 0,
 		currentHits: 0,
-		originalTransparency: instance.Transparency,
 	});
 }
 
@@ -152,7 +226,7 @@ function depleteNode(nodeId: string): void {
 
 	node.depleted = true;
 	node.respawnAt = os.clock() + config.respawnTime;
-	node.instance.Transparency = 0.7;
+	applyDepletedVisual(node);
 
 	fireAllClients("NodeDepleted", { nodeId });
 }
@@ -164,7 +238,7 @@ function respawnNode(nodeId: string): void {
 	node.depleted = false;
 	node.respawnAt = 0;
 	node.currentHits = 0;
-	node.instance.Transparency = node.originalTransparency;
+	restoreNodeVisual(node);
 
 	fireAllClients("NodeRespawned", { nodeId });
 }

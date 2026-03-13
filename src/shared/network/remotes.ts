@@ -68,6 +68,7 @@ export interface ClientEventDefinitions {
 	SkillLevelUp: { skillId: string; newLevel: number };
 	GatherComplete: { nodeId: string; itemId: string; quantity: number };
 	GatherFailed: { reason: string };
+	NodeHit: { nodeId: string; currentHits: number; hitsRequired: number };
 	NodeDepleted: { nodeId: string };
 	NodeRespawned: { nodeId: string };
 
@@ -147,6 +148,7 @@ export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
 	"SkillLevelUp",
 	"GatherComplete",
 	"GatherFailed",
+	"NodeHit",
 	"NodeDepleted",
 	"NodeRespawned",
 	"GroundItemSpawned",
