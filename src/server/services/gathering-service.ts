@@ -189,6 +189,11 @@ function completeNode(player: Player, node: NodeState): void {
 	depleteNode(node.nodeId);
 }
 
+/** Returns the best representative BasePart for a Model node (PrimaryPart or first BasePart found). */
+function resolveModelPart(model: Model): BasePart | undefined {
+	return model.PrimaryPart ?? model.FindFirstChildWhichIsA("BasePart", true);
+}
+
 function registerNode(instance: BasePart, configId: string, parentModel?: Model): void {
 	const config = GatheringNodeConfigs[configId];
 	if (!config) {
@@ -321,11 +326,11 @@ export function initialize(): void {
 		if (instance.IsA("BasePart")) {
 			registerNode(instance, configId);
 		} else if (instance.IsA("Model")) {
-			const primary = instance.PrimaryPart;
-			if (primary) {
-				registerNode(primary, configId, instance);
+			const part = resolveModelPart(instance);
+			if (part) {
+				registerNode(part, configId, instance);
 			} else {
-				warn(`[GatheringService] Model "${instance.Name}" has no PrimaryPart`);
+				warn(`[GatheringService] Model "${instance.Name}" has no BaseParts — skipping`);
 			}
 		}
 	}
@@ -336,9 +341,11 @@ export function initialize(): void {
 		if (instance.IsA("BasePart")) {
 			registerNode(instance, configId);
 		} else if (instance.IsA("Model")) {
-			const primary = instance.PrimaryPart;
-			if (primary) {
-				registerNode(primary, configId, instance);
+			const part = resolveModelPart(instance);
+			if (part) {
+				registerNode(part, configId, instance);
+			} else {
+				warn(`[GatheringService] Model "${instance.Name}" has no BaseParts — skipping`);
 			}
 		}
 	});

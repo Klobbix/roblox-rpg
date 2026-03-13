@@ -23,7 +23,7 @@ export const PickaxeConfigs: Record<string, ItemConfig> = {
 		viewmodel: {
 			holdOffset: new CFrame(1.0, -0.5, -1.2),
 			swingStyle: SwingStyle.Chop,
-			swingDuration: 0.5,
+			swingDuration: 0.2,
 			modelName: "BronzePickaxe",
 		},
 	},
