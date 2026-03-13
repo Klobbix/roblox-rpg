@@ -1,6 +1,5 @@
 import { CollectionService, Players, Workspace } from "@rbxts/services";
 import { NPCConfigs } from "shared/data/npcs";
-import { DialogueConfigs } from "shared/data/dialogues";
 import { fireClient } from "server/network/server-network";
 
 const NPC_TAG = "NPC";
@@ -49,8 +48,8 @@ export function interactNPC(player: Player, npcId: string): void {
 	if (distance > INTERACT_RANGE) return;
 
 	// Open dialogue if available
-	if (config.dialogueId) {
-		openDialogue(player, npcId, npc.configId, config.dialogueId);
+	if (config.dialogue) {
+		openDialogue(player, npcId, npc.configId);
 	}
 }
 
@@ -60,10 +59,9 @@ export function selectDialogueOption(player: Player, optionIndex: number): void 
 	if (!state) return;
 
 	const config = NPCConfigs[state.configId];
-	if (!config || !config.dialogueId) return;
+	if (!config || !config.dialogue) return;
 
-	const dialogue = DialogueConfigs[config.dialogueId];
-	if (!dialogue) return;
+	const dialogue = config.dialogue;
 
 	const node = dialogue.nodes[state.currentNodeId];
 	if (!node) return;
@@ -145,20 +143,13 @@ export function setGiveItemCallback(
 
 // --- Internal ---
 
-function openDialogue(
-	player: Player,
-	npcId: string,
-	configId: string,
-	dialogueId: string,
-): void {
-	const dialogue = DialogueConfigs[dialogueId];
+function openDialogue(player: Player, npcId: string, configId: string): void {
+	const config = NPCConfigs[configId];
+	const dialogue = config?.dialogue;
 	if (!dialogue) return;
 
 	const startNode = dialogue.nodes[dialogue.startNodeId];
 	if (!startNode) return;
-
-	const config = NPCConfigs[configId];
-	if (!config) return;
 
 	playerDialogues.set(player, {
 		npcId,
