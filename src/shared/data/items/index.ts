@@ -50,16 +50,10 @@ export function getEquipmentBonuses(equipment: Partial<Record<EquipmentSlot, { i
 	return bonuses;
 }
 
-/** Get attack speed from equipped weapon, or default */
-export function getWeaponAttackSpeed(
-	equipment: Partial<Record<EquipmentSlot, { itemId: string }>>,
-	defaultSpeed: number,
-): number {
-	const weaponItem = equipment[EquipmentSlot.Weapon];
-	if (!weaponItem) return defaultSpeed;
-
-	const config = ItemConfigs[weaponItem.itemId];
+/** Get attack speed from the currently active hotbar item, or default */
+export function getWeaponAttackSpeed(activeItemId: string | undefined, defaultSpeed: number): number {
+	if (!activeItemId) return defaultSpeed;
+	const config = ItemConfigs[activeItemId];
 	if (!config?.equipment?.attackSpeed) return defaultSpeed;
-
 	return config.equipment.attackSpeed;
 }

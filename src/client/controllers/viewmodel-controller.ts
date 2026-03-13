@@ -1,9 +1,10 @@
-import { Players, RunService, Workspace, ReplicatedStorage } from "@rbxts/services";
-import { EquipmentSlot } from "shared/types/player";
-import { ItemConfigs } from "shared/data/items";
+import { Players, ReplicatedFirst, ReplicatedStorage, RunService, Workspace } from "@rbxts/services";
 import { ViewmodelConfig, SwingStyle } from "shared/data/items/types";
+import { ItemConfigs } from "shared/data/items";
 import { onClientEvent } from "client/network/client-network";
 import * as CursorController from "./cursor-controller";
+
+const localPlayer = Players.LocalPlayer;
 
 // --- State ---
 
@@ -41,10 +42,10 @@ function buildViewmodel(itemId: string): void {
 	const camera = Workspace.CurrentCamera;
 	if (!camera) return;
 
-	const viewmodelsFolder = ReplicatedStorage.FindFirstChild("Viewmodels");
+	const viewmodelsFolder = ReplicatedStorage.FindFirstChild("Viewmodels") as Folder | undefined;
 	const template = viewmodelsFolder?.FindFirstChild(config.modelName);
 	if (!template?.IsA("Model")) {
-		warn(`[ViewmodelController] No model named "${config.modelName}" in ReplicatedStorage.Viewmodels`);
+		warn(`[ViewmodelController] No model named "${config.modelName}" in Workspace.Viewmodels`);
 		return;
 	}
 
@@ -77,7 +78,7 @@ function computeSwingDelta(style: SwingStyle, swingValue: number): CFrame {
 		case SwingStyle.Cast:
 			return CFrame.Angles(-swingValue * math.rad(35), swingValue * math.rad(10), 0);
 		default:
-			return new CFrame(0,0,0);
+			return new CFrame(0, 0, 0);
 	}
 }
 
@@ -109,7 +110,7 @@ function update(dt: number): void {
 
 	idleTime += dt;
 
-	const hrp = Players.LocalPlayer.Character?.FindFirstChild("HumanoidRootPart") as BasePart | undefined;
+	const hrp = localPlayer.Character?.FindFirstChild("HumanoidRootPart") as BasePart | undefined;
 	if (hrp && hrp.AssemblyLinearVelocity.Magnitude > 1) {
 		walkBobT += dt * 9;
 	}
@@ -133,26 +134,41 @@ function update(dt: number): void {
 	activeModel.PivotTo(camera.CFrame.mul(currentConfig.holdOffset).mul(bob).mul(swingDelta));
 }
 
-// --- Initialize ---
+// --- Character Tool Watching ---
 
-export function initialize(): void {
-	onClientEvent("EquipmentUpdated", (data) => {
-		const weaponSlot = data.equipment[EquipmentSlot.Weapon];
-		if (weaponSlot) {
-			buildViewmodel(weaponSlot.itemId);
-		} else {
+/** Watch a character for Tool equip/unequip events to drive the viewmodel. */
+function watchCharacter(character: Model): void {
+	character.ChildAdded.Connect((child) => {
+		if (child.IsA("Tool")) {
+			const itemId = child.GetAttribute("ItemId") as string | undefined;
+			if (itemId) {
+				buildViewmodel(itemId);
+			}
+		}
+	});
+
+	character.ChildRemoved.Connect((child) => {
+		if (child.IsA("Tool")) {
 			destroyViewmodel();
 		}
 	});
+}
 
-	onClientEvent("PlayerDataLoaded", (profile) => {
-		const weaponSlot = profile.equipment[EquipmentSlot.Weapon];
-		if (weaponSlot) {
-			buildViewmodel(weaponSlot.itemId);
-		}
+// --- Initialize ---
+
+export function initialize(): void {
+	// Watch current character if it exists
+	if (localPlayer.Character) {
+		watchCharacter(localPlayer.Character);
+	}
+
+	// Watch future characters (respawn)
+	localPlayer.CharacterAdded.Connect((character) => {
+		destroyViewmodel();
+		watchCharacter(character);
 	});
 
-	// Camera instance can change after respawn — rebuild into the new one
+	// Camera instance can change after respawn — destroy stale viewmodel
 	Workspace.GetPropertyChangedSignal("CurrentCamera").Connect(() => {
 		destroyViewmodel();
 	});

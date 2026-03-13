@@ -1,13 +1,14 @@
 import { Players } from "@rbxts/services";
 import { CombatStats } from "shared/types/player";
 import { baseStatsForLevel, rollDamage, mobExpReward } from "shared/data/stats";
-import { getEquipmentBonuses, getWeaponAttackSpeed } from "shared/data/items";
+import { getEquipmentBonuses, getWeaponAttackSpeed, ItemConfigs } from "shared/data/items";
 import { fireClient } from "server/network/server-network";
 import * as PlayerDataService from "./player-data-service";
 import * as LevelingService from "./leveling-service";
 import * as MobService from "./mob-service";
 import * as LootService from "./loot-service";
 import * as EquipmentService from "./equipment-service";
+import * as HotbarService from "./hotbar-service";
 
 const DEFAULT_ATTACK_SPEED = 2.4; // seconds
 const RESPAWN_TIME = 5; // seconds
@@ -27,6 +28,25 @@ interface PlayerCombatState {
 // --- State ---
 
 const playerStates = new Map<Player, PlayerCombatState>();
+
+// --- Helpers ---
+
+/** Get stat bonuses from the currently active hotbar item (weapon). */
+function getActiveWeaponBonuses(player: Player): CombatStats {
+	const bonuses: CombatStats = { maxHp: 0, attack: 0, strength: 0, defense: 0 };
+	const activeItemId = HotbarService.getActiveItemId(player);
+	if (!activeItemId) return bonuses;
+
+	const config = ItemConfigs[activeItemId];
+	if (!config?.equipment) return bonuses;
+
+	const sb = config.equipment.statBonuses;
+	bonuses.maxHp = sb.maxHp ?? 0;
+	bonuses.attack = sb.attack ?? 0;
+	bonuses.strength = sb.strength ?? 0;
+	bonuses.defense = sb.defense ?? 0;
+	return bonuses;
+}
 
 // --- Public API ---
 
@@ -99,7 +119,7 @@ export function damagePlayer(attackerStats: CombatStats, player: Player): void {
 	}
 }
 
-/** Recalculate a player's combat stats (after level up or equipment change). */
+/** Recalculate a player's combat stats (after level up, equipment change, or hotbar change). */
 export function recalculateStats(player: Player): void {
 	const state = playerStates.get(player);
 	const profile = PlayerDataService.getProfile(player);
@@ -107,19 +127,21 @@ export function recalculateStats(player: Player): void {
 
 	const baseStats = baseStatsForLevel(profile.combatLevel);
 	const equipBonuses = getEquipmentBonuses(profile.equipment);
+	const weaponBonuses = getActiveWeaponBonuses(player);
+	const activeItemId = HotbarService.getActiveItemId(player);
 
 	const newStats: CombatStats = {
-		maxHp: baseStats.maxHp + equipBonuses.maxHp,
-		attack: baseStats.attack + equipBonuses.attack,
-		strength: baseStats.strength + equipBonuses.strength,
-		defense: baseStats.defense + equipBonuses.defense,
+		maxHp: baseStats.maxHp + equipBonuses.maxHp + weaponBonuses.maxHp,
+		attack: baseStats.attack + equipBonuses.attack + weaponBonuses.attack,
+		strength: baseStats.strength + equipBonuses.strength + weaponBonuses.strength,
+		defense: baseStats.defense + equipBonuses.defense + weaponBonuses.defense,
 	};
 
 	const hpGain = math.max(0, newStats.maxHp - state.maxHp);
 	state.stats = newStats;
 	state.maxHp = newStats.maxHp;
 	state.currentHp = math.min(state.currentHp + hpGain, state.maxHp);
-	state.attackSpeed = getWeaponAttackSpeed(profile.equipment, DEFAULT_ATTACK_SPEED);
+	state.attackSpeed = getWeaponAttackSpeed(activeItemId, DEFAULT_ATTACK_SPEED);
 
 	const humanoid = player.Character?.FindFirstChildOfClass("Humanoid");
 	if (humanoid) {
@@ -150,13 +172,14 @@ function onCharacterAdded(player: Player, character: Model): void {
 
 	const baseStats = baseStatsForLevel(profile.combatLevel);
 	const equipBonuses = getEquipmentBonuses(profile.equipment);
+	const weaponBonuses = getActiveWeaponBonuses(player);
 	const stats: CombatStats = {
-		maxHp: baseStats.maxHp + equipBonuses.maxHp,
-		attack: baseStats.attack + equipBonuses.attack,
-		strength: baseStats.strength + equipBonuses.strength,
-		defense: baseStats.defense + equipBonuses.defense,
+		maxHp: baseStats.maxHp + equipBonuses.maxHp + weaponBonuses.maxHp,
+		attack: baseStats.attack + equipBonuses.attack + weaponBonuses.attack,
+		strength: baseStats.strength + equipBonuses.strength + weaponBonuses.strength,
+		defense: baseStats.defense + equipBonuses.defense + weaponBonuses.defense,
 	};
-	const weaponSpeed = getWeaponAttackSpeed(profile.equipment, DEFAULT_ATTACK_SPEED);
+	const weaponSpeed = getWeaponAttackSpeed(HotbarService.getActiveItemId(player), DEFAULT_ATTACK_SPEED);
 
 	const humanoid = character.WaitForChild("Humanoid") as Humanoid;
 	humanoid.MaxHealth = stats.maxHp;
@@ -205,6 +228,7 @@ function onPlayerDied(player: Player): void {
 export function initialize(): void {
 	MobService.setMobAttackCallback(damagePlayer);
 	EquipmentService.setEquipmentChangeCallback(recalculateStats);
+	HotbarService.setHotbarChangedCallback(recalculateStats);
 
 	Players.PlayerAdded.Connect((player) => {
 		player.CharacterAdded.Connect((character) => {

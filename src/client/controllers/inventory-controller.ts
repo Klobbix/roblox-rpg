@@ -7,6 +7,7 @@ import {
 	EquipmentSlot,
 	DEFAULT_TAB_SLOTS,
 	INVENTORY_TABS,
+	HOTBAR_SIZE,
 } from "shared/types/player";
 import { ItemConfigs, RARITY_COLORS } from "shared/data/items";
 import { fireServer, onClientEvent } from "client/network/client-network";
@@ -30,18 +31,22 @@ const EQUIP_PANEL_WIDTH = 180;
 const EQUIP_SLOT_COLOR = Color3.fromRGB(45, 45, 55);
 const EQUIP_SLOT_HOVER = Color3.fromRGB(65, 65, 80);
 
+const HOTBAR_SLOT_SIZE = 44;
+const HOTBAR_SLOT_COLOR = Color3.fromRGB(45, 55, 45);
+const HOTBAR_SLOT_HOVER = Color3.fromRGB(65, 80, 65);
+const HOTBAR_SLOT_READY = Color3.fromRGB(60, 80, 30); // tint when an item is selected and ready to assign
+
 const TAB_LABELS: Record<InventoryTab, string> = {
 	[InventoryTab.Equip]: "Equip",
 	[InventoryTab.Use]: "Use",
 	[InventoryTab.Etc]: "Etc",
 };
 
-/** Paper-doll layout: slot name and position offset from panel center */
+/** Paper-doll layout: Weapon slot removed — weapons live on the hotbar */
 const EQUIP_LAYOUT: { slot: EquipmentSlot; label: string; x: number; y: number }[] = [
 	{ slot: EquipmentSlot.Head, label: "Head", x: 0, y: 0 },
 	{ slot: EquipmentSlot.Cape, label: "Cape", x: -1, y: 1 },
 	{ slot: EquipmentSlot.Amulet, label: "Neck", x: 0, y: 1 },
-	{ slot: EquipmentSlot.Weapon, label: "Wep", x: -1, y: 2 },
 	{ slot: EquipmentSlot.Body, label: "Body", x: 0, y: 2 },
 	{ slot: EquipmentSlot.Shield, label: "Shld", x: 1, y: 2 },
 	{ slot: EquipmentSlot.Legs, label: "Legs", x: 0, y: 3 },
@@ -59,6 +64,7 @@ const tabInventories: Record<InventoryTab, TabInventory> = {
 };
 
 let equipment: Partial<Record<EquipmentSlot, InventoryItem>> = {};
+let hotbarState: (InventoryItem | undefined)[] = [];
 let activeTab: InventoryTab = InventoryTab.Equip;
 let inventoryOpen = false;
 let selectedSlot: number | undefined;
@@ -70,6 +76,7 @@ let screenGui: ScreenGui;
 let inventoryFrame: Frame;
 let slotsContainer: Frame;
 let equipmentPanel: Frame;
+let hotbarPanel: Frame;
 let tooltipFrame: Frame;
 let tooltipName: TextLabel;
 let tooltipDesc: TextLabel;
@@ -78,6 +85,7 @@ let slotCountLabel: TextLabel;
 const tabButtons: Map<InventoryTab, TextButton> = new Map();
 const slotFrames: Frame[] = [];
 const equipSlotFrames: Map<EquipmentSlot, Frame> = new Map();
+const hotbarSlotFrames: Frame[] = [];
 
 // --- UI Construction ---
 
@@ -156,6 +164,9 @@ function createUI(): void {
 
 	// Equipment panel (left of inventory)
 	createEquipmentPanel();
+
+	// Hotbar panel (below inventory)
+	createHotbarPanel();
 
 	// Tooltip
 	createTooltip();
@@ -261,6 +272,109 @@ function createEquipmentPanel(): void {
 	}
 }
 
+function createHotbarPanel(): void {
+	const slotTotal = HOTBAR_SIZE * (HOTBAR_SLOT_SIZE + SLOT_PADDING) + SLOT_PADDING;
+	const panelHeight = HOTBAR_SLOT_SIZE + SLOT_PADDING * 2 + 24;
+
+	hotbarPanel = new Instance("Frame");
+	hotbarPanel.Name = "HotbarPanel";
+	hotbarPanel.Size = new UDim2(0, slotTotal, 0, panelHeight);
+	hotbarPanel.BackgroundColor3 = BG_COLOR;
+	hotbarPanel.BorderSizePixel = 0;
+	hotbarPanel.Parent = inventoryFrame;
+
+	const corner = new Instance("UICorner");
+	corner.CornerRadius = new UDim(0, 6);
+	corner.Parent = hotbarPanel;
+
+	const title = new Instance("TextLabel");
+	title.Name = "Title";
+	title.Size = new UDim2(1, 0, 0, 20);
+	title.Position = new UDim2(0, 0, 0, 2);
+	title.BackgroundTransparency = 1;
+	title.Text = "Hotbar  (click slot to assign selected item · right-click to clear)";
+	title.TextColor3 = Color3.fromRGB(160, 160, 160);
+	title.TextSize = 10;
+	title.Font = Enum.Font.Gotham;
+	title.Parent = hotbarPanel;
+
+	for (let i = 0; i < HOTBAR_SIZE; i++) {
+		const slotFrame = new Instance("Frame");
+		slotFrame.Name = `HotbarSlot_${i}`;
+		slotFrame.Size = new UDim2(0, HOTBAR_SLOT_SIZE, 0, HOTBAR_SLOT_SIZE);
+		slotFrame.Position = new UDim2(
+			0,
+			SLOT_PADDING + i * (HOTBAR_SLOT_SIZE + SLOT_PADDING),
+			0,
+			22,
+		);
+		slotFrame.BackgroundColor3 = HOTBAR_SLOT_COLOR;
+		slotFrame.BorderSizePixel = 0;
+		slotFrame.Parent = hotbarPanel;
+
+		const slotCorner = new Instance("UICorner");
+		slotCorner.CornerRadius = new UDim(0, 4);
+		slotCorner.Parent = slotFrame;
+
+		// Slot number label
+		const numLabel = new Instance("TextLabel");
+		numLabel.Name = "SlotNum";
+		numLabel.Size = new UDim2(1, 0, 0, 12);
+		numLabel.Position = new UDim2(0, 0, 0, 1);
+		numLabel.BackgroundTransparency = 1;
+		numLabel.Text = tostring(i + 1);
+		numLabel.TextColor3 = Color3.fromRGB(100, 100, 100);
+		numLabel.TextSize = 10;
+		numLabel.Font = Enum.Font.Gotham;
+		numLabel.Parent = slotFrame;
+
+		// Item name
+		const nameLabel = new Instance("TextLabel");
+		nameLabel.Name = "ItemName";
+		nameLabel.Size = new UDim2(1, -4, 1, -14);
+		nameLabel.Position = new UDim2(0, 2, 0, 14);
+		nameLabel.BackgroundTransparency = 1;
+		nameLabel.Text = "";
+		nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255);
+		nameLabel.TextSize = 9;
+		nameLabel.Font = Enum.Font.GothamBold;
+		nameLabel.TextWrapped = true;
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Center;
+		nameLabel.TextYAlignment = Enum.TextYAlignment.Center;
+		nameLabel.Parent = slotFrame;
+
+		const button = new Instance("TextButton");
+		button.Name = "Button";
+		button.Size = UDim2.fromScale(1, 1);
+		button.BackgroundTransparency = 1;
+		button.Text = "";
+		button.Parent = slotFrame;
+
+		const capturedIndex = i;
+
+		button.MouseButton1Click.Connect(() => {
+			onHotbarSlotLeftClick(capturedIndex);
+		});
+
+		button.MouseButton2Click.Connect(() => {
+			onHotbarSlotRightClick(capturedIndex);
+		});
+
+		button.MouseEnter.Connect(() => {
+			slotFrame.BackgroundColor3 =
+				selectedSlot !== undefined ? HOTBAR_SLOT_READY : HOTBAR_SLOT_HOVER;
+			showHotbarTooltip(capturedIndex);
+		});
+
+		button.MouseLeave.Connect(() => {
+			slotFrame.BackgroundColor3 = HOTBAR_SLOT_COLOR;
+			hideTooltip();
+		});
+
+		hotbarSlotFrames.push(slotFrame);
+	}
+}
+
 function createTooltip(): void {
 	tooltipFrame = new Instance("Frame");
 	tooltipFrame.Name = "Tooltip";
@@ -331,6 +445,12 @@ function rebuildSlots(): void {
 
 	inventoryFrame.Size = new UDim2(0, invWidth, 0, totalHeight);
 	inventoryFrame.Position = new UDim2(1, -invWidth - 10, 0.5, -totalHeight / 2);
+
+	// Reposition hotbar panel below inventory frame
+	const hotbarSlotTotal = HOTBAR_SIZE * (HOTBAR_SLOT_SIZE + SLOT_PADDING) + SLOT_PADDING;
+	const hotbarPanelHeight = HOTBAR_SLOT_SIZE + SLOT_PADDING * 2 + 24;
+	hotbarPanel.Size = new UDim2(0, hotbarSlotTotal, 0, hotbarPanelHeight);
+	hotbarPanel.Position = new UDim2(0, -(hotbarSlotTotal - invWidth) / 2, 1, 6);
 
 	for (let i = 0; i < slotCount; i++) {
 		const col = i % GRID_COLS;
@@ -415,6 +535,7 @@ function rebuildSlots(): void {
 
 	refreshSlots();
 	refreshEquipment();
+	refreshHotbar();
 }
 
 // --- UI Updates ---
@@ -480,6 +601,24 @@ function refreshEquipment(): void {
 	});
 }
 
+function refreshHotbar(): void {
+	for (let i = 0; i < hotbarSlotFrames.size(); i++) {
+		const frame = hotbarSlotFrames[i];
+		const nameLabel = frame.FindFirstChild("ItemName") as TextLabel;
+		const item = hotbarState[i];
+
+		if (item !== undefined) {
+			const config = ItemConfigs[item.itemId];
+			nameLabel.Text = config ? config.name : item.itemId;
+			nameLabel.TextColor3 = config
+				? RARITY_COLORS[config.rarity]
+				: Color3.fromRGB(255, 255, 255);
+		} else {
+			nameLabel.Text = "";
+		}
+	}
+}
+
 function formatStatBonuses(itemId: string): string {
 	const config = ItemConfigs[itemId];
 	if (!config?.equipment) return "";
@@ -518,7 +657,6 @@ function showTooltipForItem(item: InventoryItem): void {
 	tooltipStats.Text = statsText;
 	tooltipStats.Visible = statsText !== "";
 
-	// Resize tooltip based on content
 	const hasStats = statsText !== "";
 	tooltipFrame.Size = new UDim2(0, 200, 0, hasStats ? 80 : 55);
 
@@ -545,6 +683,15 @@ function showEquipTooltip(slot: EquipmentSlot): void {
 	showTooltipForItem(equipped);
 }
 
+function showHotbarTooltip(hotbarSlot: number): void {
+	const item = hotbarState[hotbarSlot];
+	if (!item) {
+		hideTooltip();
+		return;
+	}
+	showTooltipForItem(item);
+}
+
 function hideTooltip(): void {
 	tooltipFrame.Visible = false;
 }
@@ -559,31 +706,44 @@ function switchTab(tab: InventoryTab): void {
 	rebuildSlots();
 }
 
+/** Returns true if the given item should go to the hotbar instead of the equipment panel. */
+function isHotbarItem(itemId: string): boolean {
+	const config = ItemConfigs[itemId];
+	if (!config) return false;
+	// Weapons go to hotbar; tools and consumables can too
+	return (
+		config.equipment?.equipSlot === "Weapon" ||
+		config.tool !== undefined
+	);
+}
+
 function onSlotLeftClick(slotIndex: number): void {
-	// On Equip tab, left-click equips the item directly
-	if (activeTab === InventoryTab.Equip) {
-		const item = tabInventories[activeTab].slots[slotIndex];
-		if (item !== undefined) {
-			const config = ItemConfigs[item.itemId];
-			if (config?.equipment) {
-				fireServer("EquipItem", { slotIndex });
-				selectedSlot = undefined;
-				return;
-			}
+	const item = tabInventories[activeTab].slots[slotIndex];
+
+	// On Equip tab: armor items equip directly; weapons/tools select for hotbar assignment
+	if (activeTab === InventoryTab.Equip && item !== undefined) {
+		const config = ItemConfigs[item.itemId];
+		if (config?.equipment && !isHotbarItem(item.itemId)) {
+			// Armor — equip directly
+			fireServer("EquipItem", { slotIndex });
+			selectedSlot = undefined;
+			return;
 		}
 	}
 
-	// Standard move behavior for non-equipment items or other tabs
+	// Standard select/move behavior
 	if (selectedSlot !== undefined) {
 		if (selectedSlot !== slotIndex) {
 			fireServer("MoveItem", { tab: activeTab, fromSlot: selectedSlot, toSlot: slotIndex });
 		}
 		selectedSlot = undefined;
 		refreshSlots();
+		refreshHotbar(); // Update hotbar slot tints
 	} else {
-		if (tabInventories[activeTab].slots[slotIndex] !== undefined) {
+		if (item !== undefined) {
 			selectedSlot = slotIndex;
 			refreshSlots();
+			refreshHotbar();
 		}
 	}
 }
@@ -603,15 +763,32 @@ function onSlotRightClick(slotIndex: number): void {
 }
 
 function onEquipSlotClick(slot: EquipmentSlot): void {
-	// Click equipped item to unequip
 	if (equipment[slot] !== undefined) {
 		fireServer("UnequipItem", { equipSlot: slot });
+	}
+}
+
+function onHotbarSlotLeftClick(hotbarSlot: number): void {
+	if (selectedSlot !== undefined) {
+		// Assign the selected inventory item to this hotbar slot
+		fireServer("AssignHotbar", { hotbarSlot, tab: activeTab, itemSlot: selectedSlot });
+		selectedSlot = undefined;
+		refreshSlots();
+		refreshHotbar();
+	}
+	// If nothing selected, do nothing (selection happens in inventory)
+}
+
+function onHotbarSlotRightClick(hotbarSlot: number): void {
+	if (hotbarState[hotbarSlot] !== undefined) {
+		fireServer("ClearHotbar", { hotbarSlot });
 	}
 }
 
 function toggleInventory(): void {
 	inventoryOpen = !inventoryOpen;
 	inventoryFrame.Visible = inventoryOpen;
+	hotbarPanel.Visible = inventoryOpen;
 	if (inventoryOpen) {
 		CursorController.push();
 		rebuildSlots();
@@ -639,6 +816,9 @@ function findGroundItemModel(part: BasePart): Model | undefined {
 
 export function initialize(): void {
 	createUI();
+
+	// Start with hotbar hidden
+	hotbarPanel.Visible = false;
 
 	UserInputService.InputBegan.Connect((input, gameProcessed) => {
 		if (gameProcessed) return;
@@ -677,6 +857,13 @@ export function initialize(): void {
 		}
 	});
 
+	onClientEvent("HotbarUpdated", (data) => {
+		hotbarState = data.hotbar;
+		if (inventoryOpen) {
+			refreshHotbar();
+		}
+	});
+
 	onClientEvent("EquipFailed", (data) => {
 		warn(`[Equipment] ${data.reason}`);
 	});
@@ -701,6 +888,7 @@ export function initialize(): void {
 			tabInventories[tab] = profile.inventory[tab];
 		}
 		equipment = profile.equipment;
+		hotbarState = profile.hotbar;
 		if (inventoryOpen) {
 			rebuildSlots();
 		}

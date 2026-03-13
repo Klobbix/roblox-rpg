@@ -52,6 +52,8 @@ export const DEFAULT_TAB_SLOTS = 24;
 export const SLOTS_PER_EXPANSION = 8;
 /** Maximum slots a tab can be expanded to */
 export const MAX_TAB_SLOTS = 96;
+/** Number of hotbar slots */
+export const HOTBAR_SIZE = 9;
 
 /** All inventory tab keys for iteration */
 export const INVENTORY_TABS: readonly InventoryTab[] = [
@@ -69,6 +71,7 @@ export interface PlayerProfile {
 	skills: Record<string, SkillProgress>;
 	inventory: Record<InventoryTab, TabInventory>;
 	equipment: Partial<Record<EquipmentSlot, InventoryItem>>;
+	hotbar: (InventoryItem | undefined)[];
 }
 
 function createDefaultTab(): TabInventory {
@@ -77,7 +80,7 @@ function createDefaultTab(): TabInventory {
 
 /** Default profile for new players */
 export const DEFAULT_PROFILE: PlayerProfile = {
-	version: 2,
+	version: 3,
 	combatLevel: 1,
 	combatExp: 0,
 	gold: 0,
@@ -88,4 +91,5 @@ export const DEFAULT_PROFILE: PlayerProfile = {
 		[InventoryTab.Etc]: createDefaultTab(),
 	},
 	equipment: {},
+	hotbar: [],
 };

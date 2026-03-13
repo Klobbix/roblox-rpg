@@ -1,5 +1,5 @@
 import { DataStoreService, Players, RunService } from "@rbxts/services";
-import { PlayerProfile, DEFAULT_PROFILE } from "shared/types/player";
+import { PlayerProfile, DEFAULT_PROFILE, EquipmentSlot } from "shared/types/player";
 import { fireClient } from "server/network/server-network";
 
 const DATASTORE_NAME = "PlayerData_v1";
@@ -36,6 +36,16 @@ function loadProfile(player: Player): void {
 			}
 
 			const profile = saveData?.profile ?? { ...DEFAULT_PROFILE };
+
+			// v3 migration: initialize hotbar if not present in older saves
+			profile.hotbar = (profile.hotbar as (typeof profile.hotbar) | undefined) ?? [];
+
+			// v3 migration: move weapon-slot item to hotbar slot 0 (Weapon removed from equipment panel)
+			const weaponItem = profile.equipment[EquipmentSlot.Weapon];
+			if (weaponItem !== undefined) {
+				profile.hotbar[0] = { itemId: weaponItem.itemId, quantity: weaponItem.quantity };
+				delete profile.equipment[EquipmentSlot.Weapon];
+			}
 
 			const newData: SaveData = {
 				profile,

@@ -9,6 +9,7 @@ export * as InventoryService from "./inventory-service";
 export * as GroundItemService from "./ground-item-service";
 export * as LootService from "./loot-service";
 export * as EquipmentService from "./equipment-service";
+export * as HotbarService from "./hotbar-service";
 export * as SkillService from "./skill-service";
 export * as GatheringService from "./gathering-service";
 export * as NPCService from "./npc-service";

@@ -14,7 +14,7 @@ export function setEquipmentChangeCallback(cb: EquipmentChangeCallback): void {
 
 /**
  * Equip an item from the Equip inventory tab.
- * Validates: item exists, is equipment, player meets level requirement.
+ * Validates: item exists, is equipment, is not a weapon (weapons use the hotbar), player meets level requirement.
  * If a slot is already occupied, swaps the old item back to inventory.
  */
 export function equipItem(player: Player, slotIndex: number): boolean {
@@ -34,6 +34,12 @@ export function equipItem(player: Player, slotIndex: number): boolean {
 	}
 
 	const equipData = config.equipment;
+
+	// Weapons go to the hotbar, not the equipment panel
+	if (equipData.equipSlot === EquipmentSlot.Weapon) {
+		fireClient(player, "EquipFailed", { reason: "Weapons are assigned via the hotbar." });
+		return false;
+	}
 
 	// Level requirement check
 	if (profile.combatLevel < equipData.levelRequirement) {

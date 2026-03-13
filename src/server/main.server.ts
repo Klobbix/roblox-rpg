@@ -11,6 +11,7 @@ import {
 	GroundItemService,
 	LootService,
 	EquipmentService,
+	HotbarService,
 	SkillService,
 	GatheringService,
 	NPCService,
@@ -46,22 +47,25 @@ LootService.initialize();
 // 7.5. Equipment service (equip/unequip — before combat so callback can be wired)
 EquipmentService.initialize();
 
-// 7.6. Skill service (skill EXP, tool lookup)
+// 7.6. Hotbar service (manages Roblox Tools in Backpack — before combat)
+HotbarService.initialize();
+
+// 7.7. Skill service (skill EXP, tool lookup)
 SkillService.initialize();
 
-// 7.7. Gathering service (nodes, depletion, respawn — registers game loop)
+// 7.8. Gathering service (nodes, depletion, respawn — registers game loop)
 GatheringService.initialize();
 
-// 7.8. NPC service (NPC spawning, dialogue management)
+// 7.9. NPC service (NPC spawning, dialogue management)
 NPCService.initialize();
 
-// 7.9. Shop service (buy/sell — wires NPC callbacks)
+// 7.10. Shop service (buy/sell — wires NPC callbacks)
 ShopService.initialize();
 
-// 7.10. Zone service (zone detection — registers game loop)
+// 7.11. Zone service (zone detection — registers game loop)
 ZoneService.initialize();
 
-// 7.11. Teleport service (portals, map transitions)
+// 7.12. Teleport service (portals, map transitions)
 MapTeleportService.initialize();
 
 // 8. Mob service (registers AI game loop system)
@@ -70,7 +74,7 @@ MobService.initialize();
 // 9. Spawner service (finds/creates spawners, spawns initial mobs)
 SpawnerService.initialize();
 
-// 10. Combat service (wires mob attack callback)
+// 10. Combat service (wires mob attack callback + hotbar changed callback)
 CombatService.initialize();
 
 // 11. Game loop — starts Heartbeat tick (all systems must be registered before this)
@@ -118,6 +122,14 @@ onServerEvent("EquipItem", (player, data) => {
 
 onServerEvent("UnequipItem", (player, data) => {
 	EquipmentService.unequipItem(player, data.equipSlot);
+});
+
+onServerEvent("AssignHotbar", (player, data) => {
+	HotbarService.assignHotbarSlot(player, data.hotbarSlot, data.tab, data.itemSlot);
+});
+
+onServerEvent("ClearHotbar", (player, data) => {
+	HotbarService.clearHotbarSlot(player, data.hotbarSlot);
 });
 
 // NPC / Dialogue

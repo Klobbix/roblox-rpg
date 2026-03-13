@@ -1,4 +1,4 @@
-import { SkillProgress } from "shared/types/player";
+import { SkillProgress, HOTBAR_SIZE } from "shared/types/player";
 import { SkillConfigs, skillLevelFromTotalExp } from "shared/data/skills";
 import { ItemConfigs } from "shared/data/items";
 import { fireClient } from "server/network/server-network";
@@ -60,7 +60,7 @@ export function grantSkillExp(
 
 /**
  * Find the best tool a player has for a given skill.
- * Checks equipped items first, then Equip inventory tab.
+ * Checks hotbar first, then equipment slots, then Equip inventory tab.
  * Returns the tool's speed multiplier, or undefined if no tool found.
  */
 export function findBestTool(
@@ -71,6 +71,21 @@ export function findBestTool(
 	if (!profile) return undefined;
 
 	let bestTool: { itemId: string; speedMultiplier: number } | undefined;
+
+	// Check hotbar
+	for (let i = 0; i < HOTBAR_SIZE; i++) {
+		const item = profile.hotbar[i];
+		if (!item) continue;
+		const config = ItemConfigs[item.itemId];
+		if (config?.tool && config.tool.skillId === skillId) {
+			const skillLevel = profile.skills[skillId]?.level ?? 1;
+			if (skillLevel >= config.tool.levelRequirement) {
+				if (!bestTool || config.tool.speedMultiplier < bestTool.speedMultiplier) {
+					bestTool = { itemId: item.itemId, speedMultiplier: config.tool.speedMultiplier };
+				}
+			}
+		}
+	}
 
 	// Check equipment slots
 	for (const [, equipped] of pairs(profile.equipment)) {

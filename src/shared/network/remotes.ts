@@ -22,6 +22,10 @@ export interface ServerEventDefinitions {
 	EquipItem: { slotIndex: number };
 	UnequipItem: { equipSlot: EquipmentSlot };
 
+	// Hotbar
+	AssignHotbar: { hotbarSlot: number; tab: InventoryTab; itemSlot: number };
+	ClearHotbar: { hotbarSlot: number };
+
 	// NPCs
 	InteractNPC: { npcId: string };
 	SelectDialogueOption: { optionIndex: number };
@@ -62,6 +66,9 @@ export interface ClientEventDefinitions {
 	// Equipment
 	EquipmentUpdated: { equipment: Partial<Record<EquipmentSlot, InventoryItem>> };
 	EquipFailed: { reason: string };
+
+	// Hotbar
+	HotbarUpdated: { hotbar: (InventoryItem | undefined)[] };
 
 	// Skills / Gathering
 	SkillExpGained: { skillId: string; amount: number; totalExp: number; level: number };
@@ -121,6 +128,8 @@ export const SERVER_EVENT_NAMES: readonly (keyof ServerEventDefinitions)[] = [
 	"UseItem",
 	"EquipItem",
 	"UnequipItem",
+	"AssignHotbar",
+	"ClearHotbar",
 	"InteractNPC",
 	"SelectDialogueOption",
 	"CloseDialogue",
@@ -144,6 +153,7 @@ export const CLIENT_EVENT_NAMES: readonly (keyof ClientEventDefinitions)[] = [
 	"InventoryFull",
 	"EquipmentUpdated",
 	"EquipFailed",
+	"HotbarUpdated",
 	"SkillExpGained",
 	"SkillLevelUp",
 	"GatherComplete",
